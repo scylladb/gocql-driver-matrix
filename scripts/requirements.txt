@@ -1,0 +1,23 @@
+boto3==1.28.15
+botocore==1.31.15
+ccm @ git+https://github.com/scylladb/scylla-ccm@c5736fa3429d18b9521f712b619e0e202d17f096
+certifi==2023.7.22
+charset-normalizer==3.2.0
+exceptiongroup==1.1.2
+idna==3.4
+iniconfig==2.0.0
+Jinja2==3.1.2
+jmespath==1.0.1
+MarkupSafe==2.1.3
+packaging==23.1
+pluggy==1.2.0
+psutil==5.9.5
+pytest==7.4.0
+python-dateutil==2.8.2
+PyYAML==6.0.1
+requests==2.31.0
+s3transfer==0.6.1
+six==1.16.0
+tomli==2.0.1
+tqdm==4.65.0
+urllib3==1.26.16
