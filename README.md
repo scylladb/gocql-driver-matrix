@@ -20,8 +20,8 @@ Have python 3.10, pip and virtualenv installed
 ##### Repositories dependencies
 All repositories should be under the **same base folder**
 ```bash
-  git clone git@github.com:scylladb/gocql.git scylla-gocql &
-  git clone git@github.com:gocql/gocql.git upstream-gocql &
+  git clone git@github.com:scylladb/gocql.git gocql-scylla &
+  git clone git@github.com:gocql/gocql.git gocql-upstream &
   wait
 ```
 
@@ -29,20 +29,18 @@ All repositories should be under the **same base folder**
 
 * Execute the main.py wrapper like:
   * Running with relocatable packages: 
-    * Scylla driver:
+    * Regardless if this is Scylla or Upstream driver (script automatically discovers based on git origin source):
       ```bash
-      # Run all standard tests on latest scylla-gocql tag (--versions 1)
-      python3 main.py ../scylla-gocql --tests integration --driver-type scylla --versions 1 --protocols 3,4 --scylla-version 5.2.4
+      # Run all standard tests on latest gocql tag (--versions 1)
+      python3 main.py ../gocql-upstream --tests integration --versions 1 --protocols 3,4 --scylla-version 5.2.4
 
-      # Run all standard tests with specific python-driver tag (--versions 3.25.0-scylla)
-      python3 main.py ../scylla-gocql --tests integration --driver-type scylla --versions v1.8.0 --protocols 3,4 --scylla-version 5.2.4
-      ```
-    * upstream driver:
-      ```bash
-      # Run all standard tests on latest scylla-gocql tag (--versions 1)
-      python3 main.py ../upstream-gocql --tests integration --driver-type scylla --versions 1 --protocols 3,4 --scylla-version 5.2.4
-
-      # Run all standard tests with specific python-driver tag (--versions 3.25.0-scylla)
-      python3 main.py ../upstream-gocql --tests integration --driver-type scylla --versions v1.5.2 --protocols 3,4 --scylla-version 5.2.4
+      # Run all standard tests with specific gocql tag (--versions 1.8.0)
+      python3 main.py ../gocql-scylla --tests integration --versions v1.8.0 --protocols 3,4 --scylla-version 5.2.4
       ```
 
+## Running locally with docker
+```bash
+export GOCQL_DRIVER_DIR=`pwd`/../gocql-scylla
+scripts/run_test.sh python3 main.py --tests integration --versions 1 --protocols 3 --scylla-version 5.2.4
+
+```

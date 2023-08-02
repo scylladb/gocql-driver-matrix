@@ -1,9 +1,8 @@
 import logging
 import os
 import re
-import shutil
 import subprocess
-from functools import cached_property, lru_cache
+from functools import cached_property
 from pathlib import Path
 from typing import Dict, List
 
@@ -15,12 +14,11 @@ from processjunit import ProcessJUnit
 
 
 class Run:
-    def __init__(self, gocql_driver_git, driver_type, scylla_install_dir, tag, tests, scylla_version, protocol):
+    def __init__(self, gocql_driver_git, driver_type, tag, tests, scylla_version, protocol):
         self.driver_version = tag
         self._full_driver_version = tag
         self._gocql_driver_git = Path(gocql_driver_git)
         self._scylla_version = scylla_version
-        self._scylla_install_dir = scylla_install_dir
         self._protocol = int(protocol)
         self._driver_type = driver_type
         self._cversion = "3.11.4"
@@ -54,7 +52,6 @@ class Run:
     @cached_property
     def ignore_tests(self) -> Dict[str, List[str]]:
         ignore_file = self.version_folder / "ignore.yaml"
-        print(ignore_file)
         if not ignore_file.exists():
             logging.info("Cannot find ignore file for version '%s'", self.driver_version)
             return {}
@@ -136,12 +133,10 @@ class Run:
             args = f"-gocql.timeout=60s -proto={self._protocol} -rf=1 -clusterSize=1 -autowait=2000ms -compressor=snappy -gocql.cversion={self._cversion} -cluster={cluster.ip_addresses}"
             go_test_cmd = f'go test -v -timeout=1m -race -tags="{self._test_tags}" {args} ./...  2>&1 | go-junit-report -iocopy -out {self.xunit_file}'
 
-            print("Running the command '%s'", go_test_cmd)
-
+            logging.info("Running the command '%s'", go_test_cmd)
             subprocess.call(f"{go_test_cmd}", shell=True, executable="/bin/bash",
                             env=self.environment, cwd=self._gocql_driver_git)
             cluster.remove()
             junit.save_after_analysis(driver_version=self.driver_version, protocol=self._protocol,
                                       python_driver_type=self._driver_type)
         return junit
-
