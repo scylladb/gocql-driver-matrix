@@ -1,21 +1,10 @@
-import importlib
 import logging
 from pathlib import Path
-import subprocess
 
+from ccmlib import scylla_cluster as ccm
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-ccm_dir = Path(__file__).parent.parent / "scylla-ccm"
-if ccm_dir.exists():
-    logger.info("installing scylla-ccm from local directory %s", ccm_dir)
-    subprocess.check_call(['python', '-m', 'pip', 'install', str(ccm_dir.absolute())])
-else:
-    logger.info("scylla-ccm not found in local directory %s. Using preinstalled one.", ccm_dir)
-
-ccm = importlib.import_module('ccmlib.scylla_cluster')
-logger.info("scylla-ccm installed and imported successfully")
 
 
 class TestCluster:
@@ -24,7 +13,7 @@ class TestCluster:
     def __init__(self, driver_directory: Path, version: str) -> None:
         self.cluster_directory = driver_directory / "ccm"
         self.cluster_directory.mkdir(parents=True, exist_ok=True)
-        self._cluster: ccm.ScyllaCluster = ccm.ScyllaCluster(self.cluster_directory, 'test', version=f"release:{version}")
+        self._cluster: ccm.ScyllaCluster = ccm.ScyllaCluster(self.cluster_directory, 'test', cassandra_version=version)
         self._cluster.populate(1)
         logger.info(self._cluster.version())
 
