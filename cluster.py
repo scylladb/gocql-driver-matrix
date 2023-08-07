@@ -1,10 +1,21 @@
+import importlib
 import logging
 from pathlib import Path
+import subprocess
 
-from ccmlib import scylla_cluster as ccm
-from ccmlib.common import get_version_from_build
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+ccm_dir = Path(__file__).parent.parent / "scylla-ccm"
+if ccm_dir.exists():
+    logger.info("installing scylla-ccm from local directory %s", ccm_dir)
+    subprocess.check_call(['python', '-m', 'pip', 'install', str(ccm_dir.absolute())])
+else:
+    logger.info("scylla-ccm not found in local directory %s. Using preinstalled one.", ccm_dir)
+
+ccm = importlib.import_module('ccmlib.scylla_cluster')
+logger.info("scylla-ccm installed and imported successfully")
 
 
 class TestCluster:

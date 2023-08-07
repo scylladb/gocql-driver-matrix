@@ -5,7 +5,7 @@ FROM python:3.10.12-bullseye AS python-build
 WORKDIR /app
 
 COPY requirements.txt .
-
+RUN pip install --no-cache-dir --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
 FROM golang:1.20.7 AS go-build
