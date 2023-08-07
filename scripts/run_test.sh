@@ -8,7 +8,8 @@ Script to run gocql driver matrix from within docker
     GOCQL_MATRIX_DIR, GOCQL_DRIVER_DIR, CCM_DIR
 
     export GOCQL_DRIVER_DIR=`pwd`/../gocql-scylla
-    scripts/run_test.sh python3 main.py --tests integration --versions 1 --protocols 3 --scylla-version 5.2.4
+    use /gocql as the driver directory as this is the place where driver is mounted
+    --tests integration --versions 1 --protocols 3 --scylla-version release:5.2.4
 "
 
 here="$(realpath $(dirname "$0"))"
@@ -49,12 +50,6 @@ fi
 
 DOCKER_CONFIG_MNT="-v $(eval echo ~${USER})/.docker:${HOME}/.docker"
 
-if [[ -z ${SCYLLA_VERSION} ]]; then
-      echo -e "\e[31m\$SCYLLA_VERSION is not set\e[0m"
-      echo "${help_text}"
-      exit 1
-fi
-
 # export all SCYLLA_* env vars into the docker run
 SCYLLA_OPTIONS=$(env | sed -n 's/^\(SCYLLA_[^=]\+\)=.*/--env \1/p')
 
@@ -88,10 +83,10 @@ docker_cmd="docker run --detach=true \
     --tmpfs ${HOME}/.config \
     --tmpfs ${HOME}/.cassandra \
     --tmpfs ${HOME}/go \
-    -v ${HOME}/.local:${HOME}/.local \
+    --tmpfs ${HOME}/.local \
     -v ${HOME}/.ccm:${HOME}/.ccm \
     --network=host --privileged \
-    ${DOCKER_IMAGE} bash -c '$* /gocql'"
+    ${DOCKER_IMAGE} $*"
 
 echo "Running Docker: $docker_cmd"
 container=$(eval $docker_cmd)

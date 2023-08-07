@@ -62,7 +62,7 @@ def extract_n_latest_repo_tags(repo_directory: str, latest_tags_size: int = 2) -
     ]
     major_tags = set()
     tags = []
-    for repo_tag in subprocess.check_output("\n".join(commands), shell=True).decode().splitlines():
+    for repo_tag in subprocess.check_output(" && ".join(commands), shell=True).decode().splitlines():
         if "." in repo_tag and not ("-" in repo_tag and not repo_tag.endswith("-scylla")):
             major_tag = tuple(repo_tag.split(".", maxsplit=2)[:2])
             if major_tag not in major_tags:
@@ -94,6 +94,9 @@ def get_arguments() -> argparse.Namespace:
                         default=os.environ.get('SCYLLA_VERSION', None)),
     parser.add_argument('--recipients', help="whom to send mail at the end of the run",  nargs='+', default=None)
     arguments = parser.parse_args()
+    if not arguments.scylla_version:
+        logging.error("Error: --scylla-version is required if SCYLLA_VERSION is not set in the environment.")
+        sys.exit(1)
     driver_versions = str(arguments.versions).replace(" ", "")
     if driver_versions.isdigit():
         arguments.versions = extract_n_latest_repo_tags(
