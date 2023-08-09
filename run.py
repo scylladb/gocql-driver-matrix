@@ -47,7 +47,7 @@ class Run:
             if tag <= target_version:
                 return target_version_folder / str(tag)
         else:
-            raise ValueError("Not found directory for python-driver version '%s'", self.driver_version)
+            raise ValueError("Not found directory for gocql-driver version '%s'", self.driver_version)
 
     @cached_property
     def ignore_tests(self) -> Dict[str, List[str]]:
@@ -138,5 +138,5 @@ class Run:
                             env=self.environment, cwd=self._gocql_driver_git)
             cluster.remove()
             junit.save_after_analysis(driver_version=self.driver_version, protocol=self._protocol,
-                                      python_driver_type=self._driver_type)
+                                      gocql_driver_type=self._driver_type)
         return junit

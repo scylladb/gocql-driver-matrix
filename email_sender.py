@@ -158,8 +158,8 @@ def get_ci_info():
     )
 
 
-def get_driver_origin_remote(python_driver_path):
-    return check_output(["bash", "-c", "git config --get remote.origin.url"], cwd=python_driver_path, text=True).strip()
+def get_driver_origin_remote(gocql_driver_path):
+    return check_output(["bash", "-c", "git config --get remote.origin.url"], cwd=gocql_driver_path, text=True).strip()
 
 
 def create_report(results, scylla_version, **kwargs):
