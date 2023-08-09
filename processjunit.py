@@ -19,7 +19,7 @@ class ProcessJUnit:
         """
         Analyze report results and modify the result according to the "ignore" tests names in the YAML file.
         Also, create a new XML file with the correct run results after the analysis and change the "casetest" so that
-         the Jenkins can display all tests result (A job can run multiple python-driver runs).
+         the Jenkins can display all tests result (A job can run multiple gocql-driver runs).
         """
         tree = ElementTree.parse(self._xunit_file).find("testsuite[@name='github.com/gocql/gocql']")
         for element in tree.iter("testcase"):
@@ -78,21 +78,21 @@ class ProcessJUnit:
         return self._summary_full_details
 
     @lru_cache(maxsize=None)
-    def save_after_analysis(self, driver_version: str, protocol: int, python_driver_type: str) -> None:
+    def save_after_analysis(self, driver_version: str, protocol: int, gocql_driver_type: str) -> None:
         """
         Create a new XML file with the correct run results after filtering the names of the tests marked as "skip" in
         the YAML file.
-        Also, change "casetest" so that the Jenkins can display all tests result (A job can run multiple python-driver
+        Also, change "casetest" so that the Jenkins can display all tests result (A job can run multiple gocql-driver
         runs).
-        :param driver_version: The python-driver tag (Example: 3.25.0-scylla or 3.25.0)
+        :param driver_version: The gocql-driver tag (Example: 1.11.1 or 1.4.0)
         :param protocol: The cqlsh native protocol number
-        :param python_driver_type: The driver type - can be "scylla" or "datastax"
+        :param gocql_driver_type: The driver type - can be "scylla" or "upstream"
         """
         tree = ElementTree.parse(self._xunit_file).find("testsuite[@name='github.com/gocql/gocql']")
         new_tree = ElementTree.Element("testsuites")
         _ = [tree.attrib.__setitem__(key, str(value)) for key, value in self.summary.items()]
         pytest_child = ElementTree.SubElement(new_tree, "testsuite", attrib=tree.attrib)
-        new_test_prefix = f"{python_driver_type}_version_{driver_version}_v{protocol}_"
+        new_test_prefix = f"{gocql_driver_type}_version_{driver_version}_v{protocol}_"
 
         for element in tree.iter("testcase"):
             test_full_name = f"{element.attrib['classname']}.{element.attrib['name']}"

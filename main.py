@@ -18,7 +18,7 @@ def main(arguments: argparse.Namespace):
     driver_type = get_driver_type(arguments.gocql_driver_git)
     for driver_version in arguments.versions:
         for protocol in arguments.protocols:
-            logging.info('=== PYTHON DRIVER VERSION %s, PROTOCOL v%s ===', driver_version, protocol)
+            logging.info('=== GOCQL DRIVER VERSION %s, PROTOCOL v%s ===', driver_version, protocol)
             try:
                 result = Run(gocql_driver_git=arguments.gocql_driver_git,
                              driver_type=driver_type,
@@ -28,7 +28,7 @@ def main(arguments: argparse.Namespace):
                              scylla_version=arguments.scylla_version
                              ).run()
 
-                logging.info("=== (%s:%s) PYTHON DRIVER MATRIX RESULTS FOR PROTOCOL v%s ===",
+                logging.info("=== (%s:%s) GOCQL DRIVER MATRIX RESULTS FOR PROTOCOL v%s ===",
                              driver_type, driver_version, protocol)
                 logging.info(", ".join(f"{key}: {value}" for key, value in result.summary.items()))
                 if result.is_failed:
@@ -81,9 +81,9 @@ def get_driver_type(gocql_driver_git):
 def get_arguments() -> argparse.Namespace:
     default_protocols = ['3', '4']
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('gocql_driver_git', help='folder with git repository of python-driver', default="/gocql")
+    parser.add_argument('gocql_driver_git', help='folder with git repository of gocql-driver', default="/gocql")
     parser.add_argument('--versions', default="2", type=str,
-                        help="python-driver versions to test\n"
+                        help="gocql-driver versions to test\n"
                              "The value can be number or str with comma (example: 'v1.8.0,v1.7.3').\n"
                              "default=2 - take the two latest driver's tags.")
     parser.add_argument('--tests', default='integration',

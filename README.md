@@ -1,4 +1,4 @@
-# Python Driver Matrix
+# Gocql Driver Matrix
 
 ## Prerequisites
 * Python3.10
