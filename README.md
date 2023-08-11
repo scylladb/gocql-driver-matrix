@@ -45,3 +45,8 @@ export GOCQL_DRIVER_DIR=`pwd`/../gocql-scylla
 scripts/run_test.sh --tests integration --versions 1 --protocols 3 --scylla-version release:5.2.4
 
 ```
+
+## Available tests:
+* integration
+* database
+* ccm
