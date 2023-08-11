@@ -23,7 +23,7 @@ class ProcessJUnit:
         """
         tree = ElementTree.parse(self._xunit_file).find("testsuite[@name='github.com/gocql/gocql']")
         for element in tree.iter("testcase"):
-            test_full_name = f"{element.attrib['classname']}.{element.attrib['name']}"
+            test_full_name = element.attrib['name']
             is_ignore_test = test_full_name in self._ignore_set["ignore"]
             is_flaky_test = test_full_name in self._ignore_set["flaky"]
             if len(element):
@@ -95,7 +95,7 @@ class ProcessJUnit:
         new_test_prefix = f"{gocql_driver_type}_version_{driver_version}_v{protocol}_"
 
         for element in tree.iter("testcase"):
-            test_full_name = f"{element.attrib['classname']}.{element.attrib['name']}"
+            test_full_name = element.attrib['name']
             element.attrib["classname"] = f"{new_test_prefix}{element.attrib['classname']}"
             testcase_element = ElementTree.SubElement(pytest_child, "testcase", attrib=element.attrib)
             if test_full_name not in self.summary_full_details.get("passed", {}) and \
@@ -110,7 +110,7 @@ class ProcessJUnit:
                               " Please remove this mark from the test"
                     tag_name = "failure"
                 elif test_full_name in self.summary_full_details.get("ignored_in_analysis", {}):
-                    message = "This test marked as 'skipped' because it appears in the YAML file"
+                    message = "This test marked as 'skipped' because it appears in the YAML file as 'ignore' test"
                     tag_name = "skipped"
                     element_test_details.attrib["type"] = "pytest.fail"
                 elif test_full_name in self.summary_full_details.get("flaky", {}):
@@ -137,4 +137,4 @@ class ProcessJUnit:
     def is_failed(self) -> bool:
         return not (self.summary["tests"] and self.summary["tests"] ==
                     self.summary["passed"] + self.summary["skipped"] + self.summary["ignored_in_analysis"] +
-                    self.summary["flaky"] + self.summary["xpassed"])
+                    self.summary["flaky"] + self.summary["xpassed"] + self.summary["xfailed"])

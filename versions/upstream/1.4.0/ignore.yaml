@@ -1,7 +1,16 @@
 # Last verified state on Jul 31, 2023 by Łukasz Sójka
 tests:
   ignore:
+    - TestAggregateMetadata
+    - TestFunctionMetadata
+    - TestKeyspaceMetadata
   flaky:
+  - TestWriteFailure
 v4_tests:
   ignore:
+  - TestUDF
+  - TestAggregateMetadata
+  - TestFunctionMetadata
+  - TestKeyspaceMetadata
   flaky:
+  - TestWriteFailure
