@@ -132,16 +132,14 @@ class Run:
         if self._checkout_branch() and self._apply_patch_files():
             for idx, test in enumerate(self._test_tags):
                 test_config: TestConfiguration = test_config_map[test]
-                cluster = TestCluster(self._gocql_driver_git, self._scylla_version, configuration=test_config.cluster_configuration)
-                cluster_params = cluster.start()
-                logging.info("Run tests for tag '%s'", test)
-                args = f"-gocql.timeout=60s -proto={self._protocol} -autowait=2000ms -compressor=snappy -gocql.cversion={self._cversion}"
-                go_test_cmd = f'go test -v {test_config.test_command_args} {cluster_params} {args} ./...  2>&1 | go-junit-report -iocopy -out {self.xunit_file}_part_{idx}'
-
-                logging.info("Running the command '%s'", go_test_cmd)
-                subprocess.call(f"{go_test_cmd}", shell=True, executable="/bin/bash",
-                                env=self.environment, cwd=self._gocql_driver_git)
-                cluster.remove()
+                with TestCluster(self._gocql_driver_git, self._scylla_version, configuration=test_config.cluster_configuration) as cluster:
+                    cluster_params = cluster.start()
+                    logging.info("Run tests for tag '%s'", test)
+                    args = f"-gocql.timeout=60s -proto={self._protocol} -autowait=2000ms -compressor=snappy -gocql.cversion={self._cversion}"
+                    go_test_cmd = f'go test -v {test_config.test_command_args} {cluster_params} {args} ./...  2>&1 | go-junit-report -iocopy -out {self.xunit_file}_part_{idx}'
+                    logging.info("Running the command '%s'", go_test_cmd)
+                    subprocess.call(f"{go_test_cmd}", shell=True, executable="/bin/bash",
+                                    env=self.environment, cwd=self._gocql_driver_git)
             junit.save_after_analysis(driver_version=self.driver_version, protocol=self._protocol,
                                       gocql_driver_type=self._driver_type)
         return junit
