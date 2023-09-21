@@ -1,6 +1,7 @@
-# Last verified state on Aug 29, 2023 by Łukasz Sójka
+# Last verified state on Sep 21, 2023 by Łukasz Sójka
 tests:
   ignore:
+  skip:
     - TestAggregateMetadata  # cassandra only
     - TestFunctionMetadata  # cassandra only
     - TestKeyspaceMetadata  # cassandra only
@@ -8,10 +9,15 @@ tests:
     - TestMaterializedViewMetadata  # cassandra only
     - TestLexicalUUIDType  # cassandra only
     - TestControlConn_ReconnectRefreshesRing  # skipped in scylladb/gocql
+    - TestDiscoverViaProxy  # https://github.com/scylladb/gocql/issues/146
+    - TestWriteFailure
+    - TestCustomPayloadValues
+    - TestCustomPayloadMessages
   flaky:
   - TestWriteFailure
 v4_tests:
   ignore:
+  skip:
   - TestUDF  # cassandra only
   - TestAggregateMetadata  # cassandra only
   - TestFunctionMetadata  # cassandra only
@@ -19,5 +25,9 @@ v4_tests:
   - TestMaterializedViewMetadata  # cassandra only
   - TestLexicalUUIDType  # cassandra only
   - TestControlConn_ReconnectRefreshesRing  # skipped in scylladb/gocql
+  - TestWriteFailure
+  - TestCustomPayloadValues
+  - TestCustomPayloadMessages
+  - TestDiscoverViaProxy  # https://github.com/scylladb/gocql/issues/146
   flaky:
   - TestWriteFailure

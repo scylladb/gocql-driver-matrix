@@ -59,7 +59,7 @@ class Run:
 
         with ignore_file.open(mode="r", encoding="utf-8") as file:
             content = yaml.safe_load(file)
-        ignore_tests = content.get("tests" if self._protocol == 3 else f"v{self._protocol}_tests", []) or {'ignore': None, 'flaky': None}
+        ignore_tests = content.get("tests" if self._protocol == 3 else f"v{self._protocol}_tests", []) or {'ignore': None, 'flaky': None, 'skip': None}
         if not ignore_tests.get("ignore", None):
             logging.info("The file '%s' for version tag '%s' doesn't contain any test to ignore for protocol"
                          " '%d'", ignore_file, self.driver_version, self._protocol)
@@ -132,11 +132,12 @@ class Run:
         if self._checkout_branch() and self._apply_patch_files():
             for idx, test in enumerate(self._test_tags):
                 test_config: TestConfiguration = test_config_map[test]
+                skip_tests = f'-skip "{"|".join(self.ignore_tests["skip"]) if self.ignore_tests.get("skip") else ""}"'
                 with TestCluster(self._gocql_driver_git, self._scylla_version, configuration=test_config.cluster_configuration) as cluster:
                     cluster_params = cluster.start()
                     logging.info("Run tests for tag '%s'", test)
                     args = f"-gocql.timeout=60s -proto={self._protocol} -autowait=2000ms -compressor=snappy -gocql.cversion={self._cversion}"
-                    go_test_cmd = f'go test -v {test_config.test_command_args} {cluster_params} {args} ./...  2>&1 | go-junit-report -iocopy -out {self.xunit_file}_part_{idx}'
+                    go_test_cmd = f'go test -v {test_config.test_command_args} {cluster_params} {skip_tests} {args} ./...  2>&1 | go-junit-report -iocopy -out {self.xunit_file}_part_{idx}'
                     logging.info("Running the command '%s'", go_test_cmd)
                     subprocess.call(f"{go_test_cmd}", shell=True, executable="/bin/bash",
                                     env=self.environment, cwd=self._gocql_driver_git)
