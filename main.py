@@ -19,14 +19,15 @@ def main(arguments: argparse.Namespace):
     for driver_version in arguments.versions:
         for protocol in arguments.protocols:
             logging.info('=== GOCQL DRIVER VERSION %s, PROTOCOL v%s ===', driver_version, protocol)
-            try:
-                result = Run(gocql_driver_git=arguments.gocql_driver_git,
+            runner = Run(gocql_driver_git=arguments.gocql_driver_git,
                              driver_type=driver_type,
                              tag=driver_version,
                              protocol=protocol,
                              tests=arguments.tests,
                              scylla_version=arguments.scylla_version
-                             ).run()
+                             )
+            try:
+                result = runner.run()
 
                 logging.info("=== (%s:%s) GOCQL DRIVER MATRIX RESULTS FOR PROTOCOL v%s ===",
                              driver_type, driver_version, protocol)
@@ -42,7 +43,9 @@ def main(arguments: argparse.Namespace):
                 logging.exception(f"{driver_version} failed")
                 status = 1
                 exc_type, exc_value, exc_traceback = sys.exc_info()
-                results[(driver_version, protocol)] = dict(exception=traceback.format_exception(exc_type, exc_value, exc_traceback))
+                failure_reason = traceback.format_exception(exc_type, exc_value, exc_traceback)
+                results[(driver_version, protocol)] = dict(exception=failure_reason)
+                runner.create_metadata_for_failure(reason="\n".join(failure_reason))
 
     if arguments.recipients:
         email_report = create_report(results=results, scylla_version=arguments.scylla_version)
