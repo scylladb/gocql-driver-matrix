@@ -2,6 +2,7 @@ import logging
 import os
 import re
 import subprocess
+import json
 from functools import cached_property
 from pathlib import Path
 from typing import Dict, List
@@ -51,6 +52,16 @@ class Run:
             raise ValueError("Not found directory for gocql-driver version '%s'", self.driver_version)
 
     @cached_property
+    def xunit_dir(self) -> Path:
+        return Path(os.path.dirname(__file__)) / "xunit" / self.driver_version
+    @property
+    def xunit_file_name(self) -> str:
+        return f'xunit.{self._driver_type}.v{self._protocol}.{self.driver_version}.xml'
+    @property
+    def metadata_file_name(self) -> str:
+        return f'metadata_{self._driver_type}_v{self._protocol}_{self.driver_version}.json'
+
+    @cached_property
     def ignore_tests(self) -> Dict[str, List[str]]:
         ignore_file = self.version_folder / "ignore.yaml"
         if not ignore_file.exists():
@@ -67,13 +78,11 @@ class Run:
 
     @cached_property
     def xunit_file(self) -> Path:
-        xunit_dir = Path(os.path.dirname(__file__)) / "xunit" / self.driver_version
-        if not xunit_dir.exists():
-            xunit_dir.mkdir(parents=True)
+        if not self.xunit_dir.exists():
+            self.xunit_dir.mkdir(parents=True)
 
-        xunit_file_name = f'xunit.{self._driver_type}.v{self._protocol}.{self.driver_version}.xml'
-        file_path = xunit_dir / xunit_file_name
-        for parts in xunit_dir.glob(f"{xunit_file_name}*"):
+        file_path = self.xunit_dir / self.xunit_file_name
+        for parts in self.xunit_dir.glob(f"{self.xunit_file_name}*"):
             parts.unlink()
         return file_path
 
@@ -125,7 +134,24 @@ class Run:
             logging.error("Failed to branch for version '%s', with: '%s'", self.driver_version, str(exc))
             return False
 
+    def create_metadata_for_failure(self, reason: str) -> None:
+        metadata_file = self.xunit_dir / self.metadata_file_name
+        if not self.xunit_dir.exists():
+            self.xunit_dir.mkdir(exist_ok=True, parents=True)
+        metadata = {
+            "driver_name": self.xunit_file_name.replace(".xml", ""),
+            "driver_type": "gocql",
+            "failure_reason": reason,
+        }
+        metadata_file.write_text(json.dumps(metadata))
+
     def run(self) -> ProcessJUnit:
+        metadata_file = self.xunit_dir / self.metadata_file_name
+        metadata = {
+            "driver_name": self.xunit_file_name.replace(".xml", ""),
+            "driver_type": "gocql",
+            "junit_result": f"./{self.xunit_file.name}",
+        }
         junit = ProcessJUnit(self.xunit_file, self.ignore_tests)
         logging.info("Changing the current working directory to the '%s' path", self._gocql_driver_git)
         os.chdir(self._gocql_driver_git)
@@ -143,4 +169,5 @@ class Run:
                                     env=self.environment, cwd=self._gocql_driver_git)
             junit.save_after_analysis(driver_version=self.driver_version, protocol=self._protocol,
                                       gocql_driver_type=self._driver_type)
+            metadata_file.write_text(json.dumps(metadata))
         return junit
