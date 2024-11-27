@@ -77,7 +77,7 @@ class ProcessJUnit:
         part_files = sorted(self._xunit_file.parent.glob(f"{self._xunit_file.name}_part_*"))
         for part in part_files:
             tree = ElementTree.parse(part)
-            part_testsuites = tree.find("testsuite[@name='github.com/apache/cassandra-gocql-driver']")
+            part_testsuites = tree.find("testsuite[@name='github.com/gocql/gocql']")
             timestamp = part_testsuites.attrib.get('timestamp')
             time_taken += float(part_testsuites.attrib.get('time', 0))
             for elem in part_testsuites:
@@ -91,7 +91,7 @@ class ProcessJUnit:
 
         root = ElementTree.Element('testsuites')
 
-        root.append(ElementTree.Element('testsuite', attrib={'name': 'github.com/apache/cassandra-gocql-driver', 'time': str(time_taken), 'timestamp': timestamp}))
+        root.append(ElementTree.Element('testsuite', attrib={'name': 'github.com/gocql/gocql', 'time': str(time_taken), 'timestamp': timestamp}))
         for testcase in test_cases.values():
             root[0].append(testcase)
 
@@ -110,7 +110,7 @@ class ProcessJUnit:
         :param gocql_driver_type: The driver type - can be "scylla" or "upstream"
         """
         self._merge_part_results()
-        tree = ElementTree.parse(self._xunit_file).find("testsuite[@name='github.com/apache/cassandra-gocql-driver']")
+        tree = ElementTree.parse(self._xunit_file).find("testsuite[@name='github.com/gocql/gocql']")
         new_tree = ElementTree.Element("testsuites")
         _ = [tree.attrib.__setitem__(key, str(value)) for key, value in self.summary.items()]
         xunit_child = ElementTree.SubElement(new_tree, "testsuite", attrib=tree.attrib)
