@@ -22,7 +22,7 @@ Have python 3.10, pip and virtualenv installed
 All repositories should be under the **same base folder**
 ```bash
   git clone git@github.com:scylladb/gocql.git gocql-scylla &
-  git clone git@github.com:apache/cassandra-gocql-driver.git gocql-upstream &
+  git clone git@github.com:gocql/gocql.git gocql-upstream &
   wait
 ```
 
