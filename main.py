@@ -61,7 +61,7 @@ def extract_n_latest_repo_tags(repo_directory: str, latest_tags_size: int = 2) -
         f"cd {repo_directory}",
         "git checkout .",
         "git fetch -p --all",
-        f"git tag --sort=-creatordate | grep ^v",
+        f"git tag --sort=-creatordate | grep '^v[0-9]*\.[0-9]*\.[0-9]*$'"
     ]
     major_tags = set()
     tags = []
