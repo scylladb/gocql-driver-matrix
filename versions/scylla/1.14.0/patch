@@ -1,0 +1,114 @@
+diff --git a/cassandra_test.go b/cassandra_test.go
+index e074acc..c70c1d3 100644
+--- a/cassandra_test.go
++++ b/cassandra_test.go
+@@ -497,7 +497,7 @@ func TestPagingWithBind(t *testing.T) {
+ func TestCAS(t *testing.T) {
+ 	cluster := createCluster()
+ 	cluster.SerialConsistency = LocalSerial
+-	session := createSessionFromCluster(cluster, t)
++	session := createSessionFromClusterTabletsDisabled(cluster, t)
+ 	defer session.Close()
+
+ 	if session.cfg.ProtoVersion == 1 {
+@@ -669,7 +669,7 @@ func TestDurationType(t *testing.T) {
+ }
+
+ func TestMapScanCAS(t *testing.T) {
+-	session := createSession(t)
++	session := createSessionFromClusterTabletsDisabled(createCluster(), t)
+ 	defer session.Close()
+
+ 	if session.cfg.ProtoVersion == 1 {
+@@ -1240,7 +1240,7 @@ func TestScanWithNilArguments(t *testing.T) {
+ }
+
+ func TestScanCASWithNilArguments(t *testing.T) {
+-	session := createSession(t)
++	session := createSessionFromClusterTabletsDisabled(createCluster(), t)
+ 	defer session.Close()
+
+ 	if session.cfg.ProtoVersion == 1 {
+@@ -1709,7 +1709,7 @@ func TestPrepare_PreparedCacheKey(t *testing.T) {
+
+ 	// create a second keyspace
+ 	cluster2 := createCluster()
+-	createKeyspace(t, cluster2, "gocql_test2")
++	createKeyspace(t, cluster2, "gocql_test2", false)
+ 	cluster2.Keyspace = "gocql_test2"
+ 	session2, err := cluster2.CreateSession()
+ 	if err != nil {
+diff --git a/common_test.go b/common_test.go
+index ad37bb2..b6de610 100644
+--- a/common_test.go
++++ b/common_test.go
+@@ -136,7 +136,7 @@ func createMultiNodeCluster(opts ...func(*ClusterConfig)) *ClusterConfig {
+ 	return cluster
+ }
+
+-func createKeyspace(tb testing.TB, cluster *ClusterConfig, keyspace string) {
++func createKeyspace(tb testing.TB, cluster *ClusterConfig, keyspace string, disableTablets bool) {
+ 	// TODO: tb.Helper()
+ 	c := *cluster
+ 	c.Keyspace = "system"
+@@ -152,22 +152,28 @@ func createKeyspace(tb testing.TB, cluster *ClusterConfig, keyspace string) {
+ 		panic(fmt.Sprintf("unable to drop keyspace: %v", err))
+ 	}
+
+-	err = createTable(session, fmt.Sprintf(`CREATE KEYSPACE %s
++	query := fmt.Sprintf(`CREATE KEYSPACE %s
+ 	WITH replication = {
+ 		'class' : 'NetworkTopologyStrategy',
+ 		'replication_factor' : %d
+-	}`, keyspace, *flagRF))
++	}`, keyspace, *flagRF)
++
++	if disableTablets {
++		query += " AND tablets = {'enabled': false}"
++	}
++
++	err = createTable(session, query)
+
+ 	if err != nil {
+ 		panic(fmt.Sprintf("unable to create keyspace: %v", err))
+ 	}
+ }
+
+-func createSessionFromCluster(cluster *ClusterConfig, tb testing.TB) *Session {
++func createSessionFromClusterHelper(cluster *ClusterConfig, tb testing.TB, tabletsDisabled bool) *Session {
+ 	// Drop and re-create the keyspace once. Different tests should use their own
+ 	// individual tables, but can assume that the table does not exist before.
+ 	initOnce.Do(func() {
+-		createKeyspace(tb, cluster, "gocql_test")
++		createKeyspace(tb, cluster, "gocql_test", tabletsDisabled)
+ 	})
+
+ 	cluster.Keyspace = "gocql_test"
+@@ -183,6 +189,14 @@ func createSessionFromCluster(cluster *ClusterConfig, tb testing.TB) *Session {
+ 	return session
+ }
+
++func createSessionFromClusterTabletsDisabled(cluster *ClusterConfig, tb testing.TB) *Session {
++	return createSessionFromClusterHelper(cluster, tb, true)
++}
++
++func createSessionFromCluster(cluster *ClusterConfig, tb testing.TB) *Session {
++	return createSessionFromClusterHelper(cluster, tb, false)
++}
++
+ func createSessionFromMultiNodeCluster(cluster *ClusterConfig, tb testing.TB) *Session {
+ 	keyspace := "test1"
+
+diff --git a/integration_test.go b/integration_test.go
+index cc8e673..87a3bc8 100644
+--- a/integration_test.go
++++ b/integration_test.go
+@@ -130,7 +130,7 @@ func TestHostFilterInitial(t *testing.T) {
+ func TestWriteFailure(t *testing.T) {
+ 	t.Skip("skipped due to unknown purpose")
+ 	cluster := createCluster()
+-	createKeyspace(t, cluster, "test")
++	createKeyspace(t, cluster, "test", false)
+ 	cluster.Keyspace = "test"
+ 	session, err := cluster.CreateSession()
+ 	if err != nil {
