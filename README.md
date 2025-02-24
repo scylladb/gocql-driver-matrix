@@ -48,5 +48,4 @@ scripts/run_test.sh --tests integration --versions 1 --protocols 3 --scylla-vers
 
 ## Available tests:
 * integration
-* database
 * ccm
