@@ -1,8 +1,8 @@
 diff --git a/cassandra_test.go b/cassandra_test.go
-index e074acc..c70c1d3 100644
+index e074acc..7c5a508 100644
 --- a/cassandra_test.go
 +++ b/cassandra_test.go
-@@ -497,7 +497,7 @@ func TestPagingWithBind(t *testing.T) {
+@@ -497,14 +497,14 @@ func TestPagingWithBind(t *testing.T) {
  func TestCAS(t *testing.T) {
  	cluster := createCluster()
  	cluster.SerialConsistency = LocalSerial
@@ -11,7 +11,15 @@ index e074acc..c70c1d3 100644
  	defer session.Close()
 
  	if session.cfg.ProtoVersion == 1 {
-@@ -669,7 +669,7 @@ func TestDurationType(t *testing.T) {
+ 		t.Skip("lightweight transactions not supported. Please use Cassandra >= 2.0")
+ 	}
+
+-	if err := createTable(session, `CREATE TABLE gocql_test.cas_table (
++	if err := createTable(session, `CREATE TABLE cas_table (
+ 			title         varchar,
+ 			revid   	  timeuuid,
+ 			last_modified timestamp,
+@@ -669,14 +669,14 @@ func TestDurationType(t *testing.T) {
  }
 
  func TestMapScanCAS(t *testing.T) {
@@ -20,7 +28,15 @@ index e074acc..c70c1d3 100644
  	defer session.Close()
 
  	if session.cfg.ProtoVersion == 1 {
-@@ -1240,7 +1240,7 @@ func TestScanWithNilArguments(t *testing.T) {
+ 		t.Skip("lightweight transactions not supported. Please use Cassandra >= 2.0")
+ 	}
+
+-	if err := createTable(session, `CREATE TABLE gocql_test.cas_table2 (
++	if err := createTable(session, `CREATE TABLE cas_table2 (
+ 			title         varchar,
+ 			revid   	  timeuuid,
+ 			last_modified timestamp,
+@@ -1240,14 +1240,14 @@ func TestScanWithNilArguments(t *testing.T) {
  }
 
  func TestScanCASWithNilArguments(t *testing.T) {
@@ -29,6 +45,14 @@ index e074acc..c70c1d3 100644
  	defer session.Close()
 
  	if session.cfg.ProtoVersion == 1 {
+ 		t.Skip("lightweight transactions not supported. Please use Cassandra >= 2.0")
+ 	}
+
+-	if err := createTable(session, `CREATE TABLE gocql_test.scan_cas_with_nil_arguments (
++	if err := createTable(session, `CREATE TABLE scan_cas_with_nil_arguments (
+ 		foo   varchar,
+ 		bar   varchar,
+ 		PRIMARY KEY (foo, bar)
 @@ -1709,7 +1709,7 @@ func TestPrepare_PreparedCacheKey(t *testing.T) {
 
  	// create a second keyspace
@@ -38,11 +62,55 @@ index e074acc..c70c1d3 100644
  	cluster2.Keyspace = "gocql_test2"
  	session2, err := cluster2.CreateSession()
  	if err != nil {
+diff --git a/cloud_cluster_test.go b/cloud_cluster_test.go
+index 4133ac5..0d92953 100644
+--- a/cloud_cluster_test.go
++++ b/cloud_cluster_test.go
+@@ -45,7 +45,7 @@ func TestCloudConnection(t *testing.T) {
+
+ 	var localAddress string
+ 	var localHostID gocql.UUID
+-	scanner := session.Query("SELECT broadcast_address, host_id FROM system.local").Iter().Scanner()
++	scanner := session.Query("SELECT broadcast_address, host_id FROM system.local WHERE key='local'").Iter().Scanner()
+ 	if scanner.Next() {
+ 		if err := scanner.Scan(&localAddress, &localHostID); err != nil {
+ 			t.Fatal(err)
 diff --git a/common_test.go b/common_test.go
-index ad37bb2..b6de610 100644
+index ad37bb2..d1d3412 100644
 --- a/common_test.go
 +++ b/common_test.go
-@@ -136,7 +136,7 @@ func createMultiNodeCluster(opts ...func(*ClusterConfig)) *ClusterConfig {
+@@ -56,7 +56,29 @@ func addSslOptions(cluster *ClusterConfig) *ClusterConfig {
+ 	return cluster
+ }
+
+-var initOnce sync.Once
++type OnceManager struct {
++	mu        sync.Mutex
++	keyspaces map[string]*sync.Once
++}
++
++func NewOnceManager() *OnceManager {
++	return &OnceManager{
++		keyspaces: make(map[string]*sync.Once),
++	}
++}
++
++func (o *OnceManager) GetOnce(key string) *sync.Once {
++	o.mu.Lock()
++	defer o.mu.Unlock()
++
++	if once, exists := o.keyspaces[key]; exists {
++		return once
++	}
++	o.keyspaces[key] = &sync.Once{}
++	return o.keyspaces[key]
++}
++
++var initKeyspaceOnce = NewOnceManager()
+
+ func createTable(s *Session, table string) error {
+ 	// lets just be really sure
+@@ -136,7 +158,7 @@ func createMultiNodeCluster(opts ...func(*ClusterConfig)) *ClusterConfig {
  	return cluster
  }
 
@@ -51,7 +119,7 @@ index ad37bb2..b6de610 100644
  	// TODO: tb.Helper()
  	c := *cluster
  	c.Keyspace = "system"
-@@ -152,22 +152,28 @@ func createKeyspace(tb testing.TB, cluster *ClusterConfig, keyspace string) {
+@@ -152,25 +174,42 @@ func createKeyspace(tb testing.TB, cluster *ClusterConfig, keyspace string) {
  		panic(fmt.Sprintf("unable to drop keyspace: %v", err))
  	}
 
@@ -75,30 +143,108 @@ index ad37bb2..b6de610 100644
  }
 
 -func createSessionFromCluster(cluster *ClusterConfig, tb testing.TB) *Session {
-+func createSessionFromClusterHelper(cluster *ClusterConfig, tb testing.TB, tabletsDisabled bool) *Session {
++type testKeyspaceOpts struct {
++	tabletsDisabled bool
++}
++
++func (o *testKeyspaceOpts) KeyspaceName() string {
++	if o.tabletsDisabled {
++		return "gocql_test_tablets_disabled"
++	}
++	return "gocql_test"
++}
++
++func createSessionFromClusterHelper(cluster *ClusterConfig, tb testing.TB, opts testKeyspaceOpts) *Session {
  	// Drop and re-create the keyspace once. Different tests should use their own
  	// individual tables, but can assume that the table does not exist before.
- 	initOnce.Do(func() {
+-	initOnce.Do(func() {
 -		createKeyspace(tb, cluster, "gocql_test")
-+		createKeyspace(tb, cluster, "gocql_test", tabletsDisabled)
++	initKeyspaceOnce.GetOnce(opts.KeyspaceName()).Do(func() {
++		createKeyspace(tb, cluster, opts.KeyspaceName(), opts.tabletsDisabled)
  	})
 
- 	cluster.Keyspace = "gocql_test"
-@@ -183,6 +189,14 @@ func createSessionFromCluster(cluster *ClusterConfig, tb testing.TB) *Session {
+-	cluster.Keyspace = "gocql_test"
++	cluster.Keyspace = opts.KeyspaceName()
+ 	session, err := cluster.CreateSession()
+ 	if err != nil {
+ 		tb.Fatal("createSession:", err)
+@@ -183,6 +222,14 @@ func createSessionFromCluster(cluster *ClusterConfig, tb testing.TB) *Session {
  	return session
  }
 
 +func createSessionFromClusterTabletsDisabled(cluster *ClusterConfig, tb testing.TB) *Session {
-+	return createSessionFromClusterHelper(cluster, tb, true)
++	return createSessionFromClusterHelper(cluster, tb, testKeyspaceOpts{tabletsDisabled: true})
 +}
 +
 +func createSessionFromCluster(cluster *ClusterConfig, tb testing.TB) *Session {
-+	return createSessionFromClusterHelper(cluster, tb, false)
++	return createSessionFromClusterHelper(cluster, tb, testKeyspaceOpts{tabletsDisabled: false})
 +}
 +
  func createSessionFromMultiNodeCluster(cluster *ClusterConfig, tb testing.TB) *Session {
  	keyspace := "test1"
 
+@@ -191,7 +238,7 @@ func createSessionFromMultiNodeCluster(cluster *ClusterConfig, tb testing.TB) *S
+ 		tb.Fatal("createSession:", err)
+ 	}
+
+-	initOnce.Do(func() {
++	initKeyspaceOnce.GetOnce(keyspace).Do(func() {
+ 		if err = createTable(session, `DROP KEYSPACE IF EXISTS `+keyspace); err != nil {
+ 			panic(fmt.Sprintf("unable to drop keyspace: %v", err))
+ 		}
+diff --git a/docker-compose.yml b/docker-compose.yml
+index 5a8ef97..8f2a7bb 100644
+--- a/docker-compose.yml
++++ b/docker-compose.yml
+@@ -29,7 +29,7 @@ services:
+       source: ./testdata/pki/cassandra.key
+       target: /etc/scylla/db.key
+     healthcheck:
+-      test: [ "CMD", "cqlsh", "-e", "select * from system.local" ]
++      test: [ "CMD", "cqlsh", "-e", "select * from system.local where key='local'" ]
+       interval: 5s
+       timeout: 5s
+       retries: 18
+@@ -43,7 +43,7 @@ services:
+       public:
+         ipv4_address: 192.168.100.12
+     healthcheck:
+-      test: [ "CMD", "cqlsh", "192.168.100.12", "-e", "select * from system.local" ]
++      test: [ "CMD", "cqlsh", "192.168.100.12", "-e", "select * from system.local where key='local'" ]
+       interval: 5s
+       timeout: 5s
+       retries: 18
+@@ -57,7 +57,7 @@ services:
+       public:
+         ipv4_address: 192.168.100.13
+     healthcheck:
+-      test: [ "CMD", "cqlsh", "192.168.100.13", "-e", "select * from system.local" ]
++      test: [ "CMD", "cqlsh", "192.168.100.13", "-e", "select * from system.local where key='local'" ]
+       interval: 5s
+       timeout: 5s
+       retries: 18
+@@ -74,7 +74,7 @@ services:
+       public:
+         ipv4_address: 192.168.100.14
+     healthcheck:
+-      test: [ "CMD", "cqlsh", "192.168.100.14", "-e", "select * from system.local" ]
++      test: [ "CMD", "cqlsh", "192.168.100.14", "-e", "select * from system.local where key='local'" ]
+       interval: 5s
+       timeout: 5s
+       retries: 18
+diff --git a/events_ccm_test.go b/events_ccm_test.go
+index fbaa008..997c571 100644
+--- a/events_ccm_test.go
++++ b/events_ccm_test.go
+@@ -290,7 +290,7 @@ func TestEventDownQueryable(t *testing.T) {
+ 	}
+
+ 	var rows int
+-	if err := session.Query("SELECT COUNT(*) FROM system.local").Scan(&rows); err != nil {
++	if err := session.Query("SELECT COUNT(*) FROM system.local WHERE key='local'").Scan(&rows); err != nil {
+ 		t.Fatal(err)
+ 	} else if rows != 1 {
+ 		t.Fatalf("expected to get 1 row got %d", rows)
 diff --git a/integration_test.go b/integration_test.go
 index cc8e673..87a3bc8 100644
 --- a/integration_test.go
@@ -112,3 +258,16 @@ index cc8e673..87a3bc8 100644
  	cluster.Keyspace = "test"
  	session, err := cluster.CreateSession()
  	if err != nil {
+diff --git a/ring_describer.go b/ring_describer.go
+index cad929d..e62bcd0 100644
+--- a/ring_describer.go
++++ b/ring_describer.go
+@@ -158,7 +158,7 @@ func (r *ringDescriber) getHostInfo(hostID UUID) (*HostInfo, error) {
+ 				iter = ch.conn.querySystem(context.TODO(), qrySystemPeers)
+ 			}
+ 		} else {
+-			iter = ch.conn.query(context.TODO(), fmt.Sprintf("SELECT * FROM %s", table))
++			iter = ch.conn.query(context.TODO(), fmt.Sprintf("SELECT * FROM %s WHERE key='local'", table))
+ 		}
+
+ 		if iter != nil {
