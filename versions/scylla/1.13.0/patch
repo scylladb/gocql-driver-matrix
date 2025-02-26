@@ -1,0 +1,4776 @@
+diff --git a/address_translators_test.go b/address_translators_test.go
+index da27015..ac47b42 100644
+--- a/address_translators_test.go
++++ b/address_translators_test.go
+@@ -1,3 +1,30 @@
++//go:build unit
++// +build unit
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql
+
+ import (
+diff --git a/batch_test.go b/batch_test.go
+index 490ae79..1802940 100644
+--- a/batch_test.go
++++ b/batch_test.go
+@@ -1,5 +1,29 @@
+-//go:build all || cassandra
+-// +build all cassandra
++//go:build integration
++// +build integration
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+
+diff --git a/cass1batch_test.go b/cass1batch_test.go
+index f8a796b..867b244 100644
+--- a/cass1batch_test.go
++++ b/cass1batch_test.go
+@@ -1,5 +1,29 @@
+-//go:build all || cassandra
+-// +build all cassandra
++//go:build integration
++// +build integration
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+diff --git a/cassandra_test.go b/cassandra_test.go
+index 67e5d01..93ee951 100644
+--- a/cassandra_test.go
++++ b/cassandra_test.go
+@@ -1,5 +1,29 @@
+-//go:build all || cassandra || scylla
+-// +build all cassandra scylla
++//go:build integration
++// +build integration
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+diff --git a/cloud_cluster_test.go b/cloud_cluster_test.go
+index 4133ac5..e0cb239 100644
+--- a/cloud_cluster_test.go
++++ b/cloud_cluster_test.go
+@@ -1,5 +1,5 @@
+-//go:build integration && scylla
+-// +build integration,scylla
++//go:build integration
++// +build integration
+
+ package gocql_test
+
+@@ -45,7 +45,7 @@ func TestCloudConnection(t *testing.T) {
+
+ 	var localAddress string
+ 	var localHostID gocql.UUID
+-	scanner := session.Query("SELECT broadcast_address, host_id FROM system.local").Iter().Scanner()
++	scanner := session.Query("SELECT broadcast_address, host_id FROM system.local WHERE key='local'").Iter().Scanner()
+ 	if scanner.Next() {
+ 		if err := scanner.Scan(&localAddress, &localHostID); err != nil {
+ 			t.Fatal(err)
+diff --git a/cluster_test.go b/cluster_test.go
+index 0d580db..f6c6d03 100644
+--- a/cluster_test.go
++++ b/cluster_test.go
+@@ -1,3 +1,30 @@
++//go:build unit
++// +build unit
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql
+
+ import (
+diff --git a/common_test.go b/common_test.go
+index abbe91c..25be9a7 100644
+--- a/common_test.go
++++ b/common_test.go
+@@ -1,3 +1,27 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql
+
+ import (
+diff --git a/compressor_test.go b/compressor_test.go
+index 8350939..3095b29 100644
+--- a/compressor_test.go
++++ b/compressor_test.go
+@@ -1,38 +1,196 @@
+-package gocql
++//go:build unit
++// +build unit
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
++package gocql_test
+
+ import (
+ 	"bytes"
++	"os"
+ 	"testing"
+
+-	"github.com/golang/snappy"
++	"github.com/klauspost/compress/s2"
++
++	"github.com/gocql/gocql"
+ )
+
++type frameExample struct {
++	Name     string
++	Frame    []byte
++	FilePath string
++}
++
++var frameExamples = struct {
++	Requests  []frameExample
++	Responses []frameExample
++}{
++	Requests: []frameExample{
++		{
++			Name:     "Small query request",
++			FilePath: "testdata/frames/small_query_request.bin",
++		},
++		{
++			Name:     "Medium query request",
++			FilePath: "testdata/frames/medium_query_request.bin",
++		},
++		{
++			Name:     "Big query request",
++			FilePath: "testdata/frames/big_query_request.bin",
++		},
++		{
++			Name:     "Prepare statement request",
++			FilePath: "testdata/frames/prepare_statement_request.bin",
++		},
++	},
++	Responses: []frameExample{
++		{
++			Name:     "Small query response",
++			FilePath: "testdata/frames/small_query_response.bin",
++		},
++		{
++			Name:     "Medium query response",
++			FilePath: "testdata/frames/medium_query_response.bin",
++		},
++		{
++			Name:     "Big query response",
++			FilePath: "testdata/frames/big_query_response.bin",
++		},
++		{
++			Name:     "Prepare statement response",
++			FilePath: "testdata/frames/prepare_statement_response.bin",
++		},
++	},
++}
++
+ func TestSnappyCompressor(t *testing.T) {
+-	c := SnappyCompressor{}
+-	if c.Name() != "snappy" {
+-		t.Fatalf("expected name to be 'snappy', got %v", c.Name())
+-	}
++	t.Run("basic", func(t *testing.T) {
++		c := gocql.SnappyCompressor{}
++		if c.Name() != "snappy" {
++			t.Fatalf("expected name to be 'snappy', got %v", c.Name())
++		}
+
+-	str := "My Test String"
+-	//Test Encoding
+-	expected := snappy.Encode(nil, []byte(str))
+-	if res, err := c.Encode([]byte(str)); err != nil {
+-		t.Fatalf("failed to encode '%v' with error %v", str, err)
+-	} else if bytes.Compare(expected, res) != 0 {
+-		t.Fatal("failed to match the expected encoded value with the result encoded value.")
+-	}
++		str := "My Test String"
++		//Test Encoding with S2 library, Snappy compatible encoding.
++		expected := s2.EncodeSnappy(nil, []byte(str))
++		if res, err := c.Encode([]byte(str)); err != nil {
++			t.Fatalf("failed to encode '%v' with error %v", str, err)
++		} else if bytes.Compare(expected, res) != 0 {
++			t.Fatal("failed to match the expected encoded value with the result encoded value.")
++		}
+
+-	val, err := c.Encode([]byte(str))
+-	if err != nil {
+-		t.Fatalf("failed to encode '%v' with error '%v'", str, err)
+-	}
++		val, err := c.Encode([]byte(str))
++		if err != nil {
++			t.Fatalf("failed to encode '%v' with error '%v'", str, err)
++		}
++
++		//Test Decoding with S2 library, Snappy compatible encoding.
++		if expected, err := s2.Decode(nil, val); err != nil {
++			t.Fatalf("failed to decode '%v' with error %v", val, err)
++		} else if res, err := c.Decode(val); err != nil {
++			t.Fatalf("failed to decode '%v' with error %v", val, err)
++		} else if bytes.Compare(expected, res) != 0 {
++			t.Fatal("failed to match the expected decoded value with the result decoded value.")
++		}
++	})
+
+-	//Test Decoding
+-	if expected, err := snappy.Decode(nil, val); err != nil {
+-		t.Fatalf("failed to decode '%v' with error %v", val, err)
+-	} else if res, err := c.Decode(val); err != nil {
+-		t.Fatalf("failed to decode '%v' with error %v", val, err)
+-	} else if bytes.Compare(expected, res) != 0 {
+-		t.Fatal("failed to match the expected decoded value with the result decoded value.")
++	t.Run("frame-examples", func(t *testing.T) {
++		c := gocql.SnappyCompressor{}
++
++		t.Run("Encode", func(t *testing.T) {
++			for _, frame := range frameExamples.Requests {
++				t.Run(frame.Name, func(t *testing.T) {
++					encoded, err := c.Encode(frame.Frame)
++					if err != nil {
++						t.Fatalf("failed to encode frame %s", frame.Name)
++					}
++					decoded, err := c.Decode(encoded)
++					if err != nil {
++						t.Fatalf("failed to decode frame %s", frame.Name)
++					}
++
++					if bytes.Compare(decoded, frame.Frame) != 0 {
++						t.Fatalf("failed to match the decoded value with the original value")
++					}
++					t.Logf("Compression rate %f", float64(len(encoded))/float64(len(frame.Frame)))
++				})
++			}
++		})
++
++		t.Run("Decode", func(t *testing.T) {
++			for _, frame := range frameExamples.Responses {
++				t.Run(frame.Name, func(t *testing.T) {
++					decoded, err := c.Decode(frame.Frame)
++					if err != nil {
++						t.Fatalf("failed to decode frame %s", frame.Name)
++					}
++
++					if len(decoded) == 0 {
++						t.Fatalf("frame was decoded to empty slice")
++					}
++				})
++			}
++		})
++	})
++}
++
++func BenchmarkSnappyCompressor(b *testing.B) {
++	c := gocql.SnappyCompressor{}
++	b.Run("Decode", func(b *testing.B) {
++		for _, frame := range frameExamples.Responses {
++			b.Run(frame.Name, func(b *testing.B) {
++				for x := 0; x < b.N; x++ {
++					_, _ = c.Decode(frame.Frame)
++				}
++			})
++		}
++	})
++
++	b.Run("Encode", func(b *testing.B) {
++		for _, frame := range frameExamples.Requests {
++			b.Run(frame.Name, func(b *testing.B) {
++				for x := 0; x < b.N; x++ {
++					_, _ = c.Encode(frame.Frame)
++				}
++			})
++		}
++	})
++}
++
++func init() {
++	var err error
++	for id, def := range frameExamples.Requests {
++		frameExamples.Requests[id].Frame, err = os.ReadFile(def.FilePath)
++		if err != nil {
++			panic("can't read file " + def.FilePath)
++		}
++	}
++	for id, def := range frameExamples.Responses {
++		frameExamples.Responses[id].Frame, err = os.ReadFile(def.FilePath)
++		if err != nil {
++			panic("can't read file " + def.FilePath)
++		}
+ 	}
+ }
+diff --git a/conn_test.go b/conn_test.go
+index b42d105..2fd35b7 100644
+--- a/conn_test.go
++++ b/conn_test.go
+@@ -1,8 +1,29 @@
+-// Copyright (c) 2012 The gocql Authors. All rights reserved.
+-// Use of this source code is governed by a BSD-style
+-// license that can be found in the LICENSE file.
+-//go:build all || unit
+-// +build all unit
++//go:build unit
++// +build unit
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2012, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+@@ -25,6 +46,9 @@ import (
+ 	"testing"
+ 	"time"
+
++	"github.com/google/go-cmp/cmp"
++	"github.com/stretchr/testify/assert"
++
+ 	"github.com/gocql/gocql/internal/streams"
+ )
+
+@@ -34,18 +58,21 @@ const (
+
+ func TestApprove(t *testing.T) {
+ 	tests := map[bool]bool{
+-		approve("org.apache.cassandra.auth.PasswordAuthenticator", []string{}):                                          true,
+-		approve("com.instaclustr.cassandra.auth.SharedSecretAuthenticator", []string{}):                                 true,
+-		approve("com.datastax.bdp.cassandra.auth.DseAuthenticator", []string{}):                                         true,
+-		approve("io.aiven.cassandra.auth.AivenAuthenticator", []string{}):                                               true,
+-		approve("com.amazon.helenus.auth.HelenusAuthenticator", []string{}):                                             true,
+-		approve("com.ericsson.bss.cassandra.ecaudit.auth.AuditAuthenticator", []string{}):                               true,
+-		approve("com.scylladb.auth.SaslauthdAuthenticator", []string{}):                                                 true,
+-		approve("com.scylladb.auth.TransitionalAuthenticator", []string{}):                                              true,
+-		approve("com.instaclustr.cassandra.auth.InstaclustrPasswordAuthenticator", []string{}):                          true,
+-		approve("com.apache.cassandra.auth.FakeAuthenticator", []string{}):                                              false,
+-		approve("com.apache.cassandra.auth.FakeAuthenticator", nil):                                                     false,
+-		approve("com.apache.cassandra.auth.FakeAuthenticator", []string{"com.apache.cassandra.auth.FakeAuthenticator"}): true,
++		approve("org.apache.cassandra.auth.PasswordAuthenticator", []string{}):                                             true,
++		approve("org.apache.cassandra.auth.MutualTlsWithPasswordFallbackAuthenticator", []string{}):                        true,
++		approve("org.apache.cassandra.auth.MutualTlsAuthenticator", []string{}):                                            true,
++		approve("com.instaclustr.cassandra.auth.SharedSecretAuthenticator", []string{}):                                    true,
++		approve("com.datastax.bdp.cassandra.auth.DseAuthenticator", []string{}):                                            true,
++		approve("io.aiven.cassandra.auth.AivenAuthenticator", []string{}):                                                  true,
++		approve("com.amazon.helenus.auth.HelenusAuthenticator", []string{}):                                                true,
++		approve("com.ericsson.bss.cassandra.ecaudit.auth.AuditAuthenticator", []string{}):                                  true,
++		approve("com.scylladb.auth.SaslauthdAuthenticator", []string{}):                                                    true,
++		approve("com.scylladb.auth.TransitionalAuthenticator", []string{}):                                                 true,
++		approve("com.instaclustr.cassandra.auth.InstaclustrPasswordAuthenticator", []string{}):                             true,
++		approve("com.apache.cassandra.auth.FakeAuthenticator", []string{}):                                                 true,
++		approve("com.apache.cassandra.auth.FakeAuthenticator", nil):                                                        true,
++		approve("com.apache.cassandra.auth.FakeAuthenticator", []string{"com.apache.cassandra.auth.FakeAuthenticator"}):    true,
++		approve("com.apache.cassandra.auth.FakeAuthenticator", []string{"com.apache.cassandra.auth.NotFakeAuthenticator"}): false,
+ 	}
+ 	for k, v := range tests {
+ 		if k != v {
+@@ -308,7 +335,7 @@ func TestCancel(t *testing.T) {
+ 	wg.Add(1)
+
+ 	go func() {
+-		if err := qry.Exec(); err != context.Canceled {
++		if err := qry.Exec(); !errors.Is(err, context.Canceled) {
+ 			t.Fatalf("expected to get context cancel error: '%v', got '%v'", context.Canceled, err)
+ 		}
+ 		wg.Done()
+@@ -453,6 +480,10 @@ func (t *testRetryPolicy) Attempt(qry RetryableQuery) bool {
+ 	return qry.Attempts() <= t.NumRetries
+ }
+ func (t *testRetryPolicy) GetRetryType(err error) RetryType {
++	var executedErr *QueryError
++	if errors.As(err, &executedErr) && executedErr.PotentiallyExecuted() && !executedErr.IsIdempotent() {
++		return Rethrow
++	}
+ 	return Retry
+ }
+
+@@ -570,7 +601,7 @@ func TestQueryTimeout(t *testing.T) {
+
+ 	select {
+ 	case err := <-ch:
+-		if err != ErrTimeoutNoResponse {
++		if !errors.Is(err, ErrTimeoutNoResponse) {
+ 			t.Fatalf("expected to get %v for timeout got %v", ErrTimeoutNoResponse, err)
+ 		}
+ 	case <-time.After(40*time.Millisecond + db.cfg.Timeout):
+@@ -664,8 +695,8 @@ func TestQueryTimeoutClose(t *testing.T) {
+ 		t.Fatal("timedout waiting to get a response once cluster is closed")
+ 	}
+
+-	if err != ErrConnectionClosed {
+-		t.Fatalf("expected to get %v got %v", ErrConnectionClosed, err)
++	if !errors.Is(err, ErrConnectionClosed) {
++		t.Fatalf("expected to get %v or an error wrapping it, got %v", ErrConnectionClosed, err)
+ 	}
+ }
+
+@@ -718,11 +749,89 @@ func TestContext_Timeout(t *testing.T) {
+ 	cancel()
+
+ 	err = db.Query("timeout").WithContext(ctx).Exec()
+-	if err != context.Canceled {
++	if !errors.Is(err, context.Canceled) {
+ 		t.Fatalf("expected to get context cancel error: %v got %v", context.Canceled, err)
+ 	}
+ }
+
++type TestReconnectionPolicy struct {
++	NumRetries       int
++	GetIntervalCalls []int
++}
++
++func (c *TestReconnectionPolicy) GetInterval(currentRetry int) time.Duration {
++	c.GetIntervalCalls = append(c.GetIntervalCalls, currentRetry)
++	return time.Duration(0)
++}
++
++func (c *TestReconnectionPolicy) GetMaxRetries() int {
++	return c.NumRetries
++}
++
++func TestInitialRetryPolicy(t *testing.T) {
++	t.Parallel()
++
++	tcase := []struct {
++		NumRetries               int
++		ProtoVersion             int
++		ExpectedGetIntervalCalls []int
++		ExpectedErr              string
++	}{
++		{
++			NumRetries:               1,
++			ProtoVersion:             0,
++			ExpectedGetIntervalCalls: nil,
++			ExpectedErr:              "gocql: unable to create session: unable to connect to the cluster, last error: unable to discover protocol version:"},
++		{
++			NumRetries:               2,
++			ProtoVersion:             0,
++			ExpectedGetIntervalCalls: []int{1},
++			ExpectedErr:              "gocql: unable to create session: unable to connect to the cluster, last error: unable to discover protocol version:"},
++		{
++			NumRetries:               3,
++			ProtoVersion:             0,
++			ExpectedGetIntervalCalls: []int{1, 2},
++			ExpectedErr:              "gocql: unable to create session: unable to connect to the cluster, last error: unable to discover protocol version:"},
++		{
++			NumRetries:               1,
++			ProtoVersion:             4,
++			ExpectedGetIntervalCalls: nil,
++			ExpectedErr:              "gocql: unable to create session: unable to connect to the cluster, last error: unable to create control connection: unable to connect to initial hosts:"},
++		{
++			NumRetries:               2,
++			ProtoVersion:             4,
++			ExpectedGetIntervalCalls: []int{1},
++			ExpectedErr:              "gocql: unable to create session: unable to connect to the cluster, last error: unable to create control connection: unable to connect to initial hosts:"},
++		{
++			NumRetries:               3,
++			ProtoVersion:             4,
++			ExpectedGetIntervalCalls: []int{1, 2},
++			ExpectedErr:              "gocql: unable to create session: unable to connect to the cluster, last error: unable to create control connection: unable to connect to initial hosts:"},
++	}
++
++	for id := range tcase {
++		tc := tcase[id]
++		t.Run(fmt.Sprintf("NumRetries=%d_ProtocolVersion=%d", tc.NumRetries, tc.ProtoVersion), func(t *testing.T) {
++			t.Parallel()
++
++			cluster := NewCluster("127.254.254.254")
++			policy := &TestReconnectionPolicy{NumRetries: tc.NumRetries}
++			cluster.InitialReconnectionPolicy = policy
++			cluster.ProtoVersion = tc.ProtoVersion
++			_, err := cluster.CreateSession()
++			if err == nil {
++				t.Fatal("expected to get an error")
++			}
++			if !strings.Contains(err.Error(), tc.ExpectedErr) {
++				t.Errorf("expected error to contain %q got %q", tc.ExpectedErr, err.Error())
++			}
++			if !cmp.Equal(tc.ExpectedGetIntervalCalls, policy.GetIntervalCalls) {
++				t.Errorf("expected GetInterval calls to be (%+v) but was (%+v) instead", tc.ExpectedGetIntervalCalls, policy.GetIntervalCalls)
++			}
++		})
++	}
++}
++
+ func TestContext_CanceledBeforeExec(t *testing.T) {
+ 	ctx, cancel := context.WithCancel(context.Background())
+ 	defer cancel()
+@@ -757,7 +866,7 @@ func TestContext_CanceledBeforeExec(t *testing.T) {
+ 	cancel()
+
+ 	err = db.Query("timeout").WithContext(ctx).Exec()
+-	if err != context.Canceled {
++	if !errors.Is(err, context.Canceled) {
+ 		t.Fatalf("expected to get context cancel error: %v got %v", context.Canceled, err)
+ 	}
+
+@@ -1315,3 +1424,88 @@ func (srv *TestServer) readFrame(conn net.Conn) (*framer, error) {
+
+ 	return framer, nil
+ }
++
++func TestGetSchemaAgreement(t *testing.T) {
++	schema_version1 := ParseUUIDMust("af810386-a694-11ef-81fa-3aea73156247")
++	peersRows := []map[string]interface{}{
++		{
++			"data_center":     "datacenter1",
++			"host_id":         ParseUUIDMust("b2035fd9-e0ca-4857-8c45-e63c00fb7c43"),
++			"peer":            "127.0.0.3",
++			"preferred_ip":    "127.0.0.3",
++			"rack":            "rack1",
++			"release_version": "3.0.8",
++			"rpc_address":     "127.0.0.3",
++			"schema_version":  schema_version1,
++			"tokens":          []string{"-1296227678594315580994457470329811265"},
++		},
++		{
++			"data_center":     "datacenter1",
++			"host_id":         ParseUUIDMust("4b21ee4c-acea-4267-8e20-aaed5361a0dd"),
++			"peer":            "127.0.0.2",
++			"preferred_ip":    "127.0.0.2",
++			"rack":            "rack1",
++			"release_version": "3.0.8",
++			"rpc_address":     "127.0.0.2",
++			"schema_version":  schema_version1,
++			"tokens":          []string{"-1129762924682054333"},
++		},
++		{
++			"data_center":     "datacenter2",
++			"host_id":         ParseUUIDMust("dfef4a22-b8d8-47e9-aee5-8c19d4b7a9e3"),
++			"peer":            "127.0.0.5",
++			"preferred_ip":    "127.0.0.5",
++			"rack":            "rack1",
++			"release_version": "3.0.8",
++			"rpc_address":     "127.0.0.5",
++			"schema_version":  ParseUUIDMust("875a938a-a695-11ef-4314-85c8ef0ebaa2"),
++			"tokens":          []string{},
++		},
++	}
++
++	translateAddressPort := func(addr net.IP, port int) (net.IP, int) {
++		return addr, port
++	}
++
++	var logger StdLogger
++
++	t.Run("SchemaNotConsistent", func(t *testing.T) {
++		err := getSchemaAgreement(
++			[]string{"875a938a-a695-11ef-4314-85c8ef0ebaa2"},
++			peersRows,
++			net.ParseIP("127.0.0.1"),
++			9042,
++			translateAddressPort,
++			logger,
++		)
++
++		assert.Error(t, err, "error expected when local schema is different then others")
++	})
++
++	t.Run("ZeroTokenNodeSchemaNotConsistent", func(t *testing.T) {
++		err := getSchemaAgreement(
++			[]string{"af810386-a694-11ef-81fa-3aea73156247"},
++			peersRows,
++			net.ParseIP("127.0.0.1"),
++			9042,
++			translateAddressPort,
++			logger,
++		)
++
++		assert.Error(t, err, "expected error when zero-token node has different schema")
++	})
++
++	t.Run("SchemaConsistent", func(t *testing.T) {
++		peersRows[2]["schema_version"] = schema_version1
++		err := getSchemaAgreement(
++			[]string{"af810386-a694-11ef-81fa-3aea73156247"},
++			peersRows,
++			net.ParseIP("127.0.0.1"),
++			9042,
++			translateAddressPort,
++			logger,
++		)
++
++		assert.NoError(t, err, "expected no error when all nodes have the same schema")
++	})
++}
+diff --git a/connectionpool_test.go b/connectionpool_test.go
+index 7546672..90c1eb6 100644
+--- a/connectionpool_test.go
++++ b/connectionpool_test.go
+@@ -1,5 +1,29 @@
+-//go:build all || unit
+-// +build all unit
++//go:build unit
++// +build unit
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+diff --git a/control_test.go b/control_test.go
+index b464698..c5d5ef5 100644
+--- a/control_test.go
++++ b/control_test.go
+@@ -1,3 +1,30 @@
++//go:build unit
++// +build unit
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql
+
+ import (
+diff --git a/errors_test.go b/errors_test.go
+index 85246c0..a904660 100644
+--- a/errors_test.go
++++ b/errors_test.go
+@@ -1,9 +1,34 @@
+-//go:build all || cassandra
+-// +build all cassandra
++//go:build integration
++// +build integration
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+ import (
++	"errors"
+ 	"testing"
+ )
+
+@@ -18,12 +43,12 @@ func TestErrorsParse(t *testing.T) {
+ 	if err := createTable(session, `CREATE TABLE gocql_test.errors_parse (id int primary key)`); err == nil {
+ 		t.Fatal("Should have gotten already exists error from cassandra server.")
+ 	} else {
+-		switch e := err.(type) {
+-		case *RequestErrAlreadyExists:
++		e := &RequestErrAlreadyExists{}
++		if errors.As(err, &e) {
+ 			if e.Table != "errors_parse" {
+ 				t.Fatalf("expected error table to be 'errors_parse' but was %q", e.Table)
+ 			}
+-		default:
++		} else {
+ 			t.Fatalf("expected to get RequestErrAlreadyExists instead got %T", e)
+ 		}
+ 	}
+diff --git a/session_test.go b/session_test.go
+index d5a59da..8aca42f 100644
+--- a/session_test.go
++++ b/session_test.go
+@@ -1,5 +1,29 @@
+-//go:build all || cassandra || scylla
+-// +build all cassandra scylla
++//go:build integration
++// +build integration
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+diff --git a/events_test.go b/events_test.go
+index 37aefdc..acb3156 100644
+--- a/events_test.go
++++ b/events_test.go
+@@ -1,3 +1,30 @@
++//go:build unit
++// +build unit
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql
+
+ import (
+diff --git a/example_dynamic_columns_test.go b/example_dynamic_columns_test.go
+index 6b4d3da..eab1752 100644
+--- a/example_dynamic_columns_test.go
++++ b/example_dynamic_columns_test.go
+@@ -1,13 +1,38 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql_test
+
+ import (
+ 	"context"
+ 	"fmt"
+-	"github.com/gocql/gocql"
+ 	"log"
+ 	"os"
+ 	"reflect"
+ 	"text/tabwriter"
++
++	gocql "github.com/gocql/gocql"
+ )
+
+ // Example_dynamicColumns demonstrates how to handle dynamic column list.
+diff --git a/example_lwt_batch_test.go b/example_lwt_batch_test.go
+index d3afa5c..848ca35 100644
+--- a/example_lwt_batch_test.go
++++ b/example_lwt_batch_test.go
+@@ -1,10 +1,35 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql_test
+
+ import (
+ 	"context"
+ 	"fmt"
+-	"github.com/gocql/gocql"
+ 	"log"
++
++	gocql "github.com/gocql/gocql"
+ )
+
+ // ExampleSession_MapExecuteBatchCAS demonstrates how to execute a batch lightweight transaction.
+diff --git a/example_lwt_test.go b/example_lwt_test.go
+index 5ffe834..7ca0fb8 100644
+--- a/example_lwt_test.go
++++ b/example_lwt_test.go
+@@ -1,10 +1,35 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql_test
+
+ import (
+ 	"context"
+ 	"fmt"
+-	"github.com/gocql/gocql"
+ 	"log"
++
++	gocql "github.com/gocql/gocql"
+ )
+
+ // ExampleQuery_MapScanCAS demonstrates how to execute a single-statement lightweight transaction.
+diff --git a/example_marshaler_test.go b/example_marshaler_test.go
+index 1d88d92..323ebd2 100644
+--- a/example_marshaler_test.go
++++ b/example_marshaler_test.go
+@@ -1,12 +1,37 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql_test
+
+ import (
+ 	"context"
+ 	"fmt"
+-	"github.com/gocql/gocql"
+ 	"log"
+ 	"strconv"
+ 	"strings"
++
++	gocql "github.com/gocql/gocql"
+ )
+
+ // MyMarshaler implements Marshaler and Unmarshaler.
+diff --git a/example_nulls_test.go b/example_nulls_test.go
+index 652e1c2..e288c99 100644
+--- a/example_nulls_test.go
++++ b/example_nulls_test.go
+@@ -1,9 +1,34 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql_test
+
+ import (
+ 	"fmt"
+-	"github.com/gocql/gocql"
+ 	"log"
++
++	gocql "github.com/gocql/gocql"
+ )
+
+ // Example_nulls demonstrates how to distinguish between null and zero value when needed.
+diff --git a/example_paging_test.go b/example_paging_test.go
+index c039308..1ddc4ce 100644
+--- a/example_paging_test.go
++++ b/example_paging_test.go
+@@ -1,9 +1,34 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql_test
+
+ import (
+ 	"fmt"
+-	"github.com/gocql/gocql"
+ 	"log"
++
++	gocql "github.com/gocql/gocql"
+ )
+
+ // Example_paging demonstrates how to manually fetch pages and use page state.
+diff --git a/example_set_test.go b/example_set_test.go
+index 4114e7a..76a97f8 100644
+--- a/example_set_test.go
++++ b/example_set_test.go
+@@ -1,10 +1,35 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql_test
+
+ import (
+ 	"fmt"
+-	"github.com/gocql/gocql"
+ 	"log"
+ 	"sort"
++
++	gocql "github.com/gocql/gocql"
+ )
+
+ // Example_set demonstrates how to use sets.
+diff --git a/example_test.go b/example_test.go
+index 589ec57..35ea051 100644
+--- a/example_test.go
++++ b/example_test.go
+@@ -1,10 +1,35 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql_test
+
+ import (
+ 	"context"
+ 	"fmt"
+-	"github.com/gocql/gocql"
+ 	"log"
++
++	gocql "github.com/gocql/gocql"
+ )
+
+ func Example() {
+diff --git a/example_udt_map_test.go b/example_udt_map_test.go
+index 1018456..03b98cc 100644
+--- a/example_udt_map_test.go
++++ b/example_udt_map_test.go
+@@ -1,10 +1,35 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql_test
+
+ import (
+ 	"context"
+ 	"fmt"
+-	"github.com/gocql/gocql"
+ 	"log"
++
++	gocql "github.com/gocql/gocql"
+ )
+
+ // Example_userDefinedTypesMap demonstrates how to work with user-defined types as maps.
+diff --git a/example_udt_marshaler_test.go b/example_udt_marshaler_test.go
+index ea9d71c..1b24f2a 100644
+--- a/example_udt_marshaler_test.go
++++ b/example_udt_marshaler_test.go
+@@ -1,9 +1,34 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql_test
+
+ import (
+ 	"context"
+-	"github.com/gocql/gocql"
+ 	"log"
++
++	gocql "github.com/gocql/gocql"
+ )
+
+ // MyUDTMarshaler implements UDTMarshaler.
+diff --git a/example_udt_struct_test.go b/example_udt_struct_test.go
+index 31c5965..d5045d6 100644
+--- a/example_udt_struct_test.go
++++ b/example_udt_struct_test.go
+@@ -1,10 +1,35 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql_test
+
+ import (
+ 	"context"
+ 	"fmt"
+-	"github.com/gocql/gocql"
+ 	"log"
++
++	gocql "github.com/gocql/gocql"
+ )
+
+ type MyUDT struct {
+diff --git a/example_udt_unmarshaler_test.go b/example_udt_unmarshaler_test.go
+index a5debcb..9d4d293 100644
+--- a/example_udt_unmarshaler_test.go
++++ b/example_udt_unmarshaler_test.go
+@@ -1,10 +1,35 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql_test
+
+ import (
+ 	"context"
+ 	"fmt"
+-	"github.com/gocql/gocql"
+ 	"log"
++
++	gocql "github.com/gocql/gocql"
+ )
+
+ // MyUDTUnmarshaler implements UDTUnmarshaler.
+diff --git a/exec_test.go b/exec_test.go
+index 09250a2..9c73c70 100644
+--- a/exec_test.go
++++ b/exec_test.go
+@@ -1,4 +1,5 @@
+-// +build all integration
++//go:build integration
++// +build integration
+
+ package gocql
+
+diff --git a/export_test.go b/export_test.go
+index 8304363..925c268 100644
+--- a/export_test.go
++++ b/export_test.go
+@@ -1,5 +1,5 @@
+-//go:build integration || unit
+-// +build integration unit
++//go:build integration
++// +build integration
+
+ package gocql
+
+diff --git a/filters_test.go b/filters_test.go
+index 1ccf1a1..3c2f50b 100644
+--- a/filters_test.go
++++ b/filters_test.go
+@@ -1,3 +1,30 @@
++//go:build unit
++// +build unit
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql
+
+ import (
+diff --git a/frame_test.go b/frame_test.go
+index 6b8eb22..deace00 100644
+--- a/frame_test.go
++++ b/frame_test.go
+@@ -1,3 +1,30 @@
++//go:build unit
++// +build unit
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql
+
+ import (
+@@ -22,8 +49,6 @@ func TestFuzzBugs(t *testing.T) {
+ 			"0000000"),
+ 		[]byte("\x82\xe600\x00\x00\x00\x000"),
+ 		[]byte("\x8200\b\x00\x00\x00\b0\x00\x00\x00\x040000"),
+-		[]byte("\x8200\x00\x00\x00\x00\x100\x00\x00\x12\x00\x00\x0000000" +
+-			"00000"),
+ 		[]byte("\x83000\b\x00\x00\x00\x14\x00\x00\x00\x020000000" +
+ 			"000000000"),
+ 		[]byte("\x83000\b\x00\x00\x000\x00\x00\x00\x04\x00\x1000000" +
+diff --git a/framer_bench_test.go b/framer_bench_test.go
+index 5b7b442..953e0e9 100644
+--- a/framer_bench_test.go
++++ b/framer_bench_test.go
+@@ -1,3 +1,30 @@
++//go:build bench
++// +build bench
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql
+
+ import (
+diff --git a/helpers_test.go b/helpers_test.go
+index 0f6cedc..38ed02d 100644
+--- a/helpers_test.go
++++ b/helpers_test.go
+@@ -1,3 +1,30 @@
++//go:build unit
++// +build unit
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql
+
+ import (
+diff --git a/host_source_test.go b/host_source_test.go
+index bd45e75..6fe876d 100644
+--- a/host_source_test.go
++++ b/host_source_test.go
+@@ -1,15 +1,35 @@
+-//go:build all || unit
+-// +build all unit
++//go:build unit
++// +build unit
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+ import (
+-	"errors"
+ 	"net"
+-	"sync"
+-	"sync/atomic"
+ 	"testing"
+-	"time"
+ )
+
+ func TestUnmarshalCassVersion(t *testing.T) {
+@@ -73,6 +93,25 @@ func TestIsValidPeer(t *testing.T) {
+ 	}
+ }
+
++func TestIsZeroToken(t *testing.T) {
++	host := &HostInfo{
++		rpcAddress: net.ParseIP("0.0.0.0"),
++		rack:       "myRack",
++		hostId:     "0",
++		dataCenter: "datacenter",
++		tokens:     []string{"0", "1"},
++	}
++
++	if isZeroToken(host) {
++		t.Errorf("expected %+v to NOT be a zero-token host", host)
++	}
++
++	host.tokens = []string{}
++	if !isZeroToken(host) {
++		t.Errorf("expected %+v to be a zero-token host", host)
++	}
++}
++
+ func TestHostInfo_ConnectAddress(t *testing.T) {
+ 	var localhost = net.IPv4(127, 0, 0, 1)
+ 	tests := []struct {
+@@ -103,245 +142,3 @@ func TestHostInfo_ConnectAddress(t *testing.T) {
+ 		})
+ 	}
+ }
+-
+-// This test sends debounce requests and waits until the refresh function is called (which should happen when the timer elapses).
+-func TestRefreshDebouncer_MultipleEvents(t *testing.T) {
+-	const numberOfEvents = 10
+-	channel := make(chan int, numberOfEvents) // should never use more than 1 but allow for more to possibly detect bugs
+-	fn := func() error {
+-		channel <- 0
+-		return nil
+-	}
+-	beforeEvents := time.Now()
+-	wg := sync.WaitGroup{}
+-	d := newRefreshDebouncer(2*time.Second, fn)
+-	defer d.stop()
+-	for i := 0; i < numberOfEvents; i++ {
+-		wg.Add(1)
+-		go func() {
+-			defer wg.Done()
+-			d.debounce()
+-		}()
+-	}
+-	wg.Wait()
+-	timeoutCh := time.After(2500 * time.Millisecond) // extra time to avoid flakiness
+-	select {
+-	case <-channel:
+-	case <-timeoutCh:
+-		t.Fatalf("timeout elapsed without flush function being called")
+-	}
+-	afterFunctionCall := time.Now()
+-
+-	// use 1.5 seconds instead of 2 seconds to avoid timer precision issues
+-	if afterFunctionCall.Sub(beforeEvents) < 1500*time.Millisecond {
+-		t.Fatalf("function was called after %v ms instead of ~2 seconds", afterFunctionCall.Sub(beforeEvents).Milliseconds())
+-	}
+-
+-	// wait another 2 seconds and check if function was called again
+-	time.Sleep(2500 * time.Millisecond)
+-	if len(channel) > 0 {
+-		t.Fatalf("function was called more than once")
+-	}
+-}
+-
+-// This test:
+-//
+-//	1 - Sends debounce requests when test starts
+-//	2 - Calls refreshNow() before the timer elapsed (which stops the timer) about 1.5 seconds after test starts
+-//
+-// The end result should be 1 refresh function call when refreshNow() is called.
+-func TestRefreshDebouncer_RefreshNow(t *testing.T) {
+-	const numberOfEvents = 10
+-	channel := make(chan int, numberOfEvents) // should never use more than 1 but allow for more to possibly detect bugs
+-	fn := func() error {
+-		channel <- 0
+-		return nil
+-	}
+-	beforeEvents := time.Now()
+-	eventsWg := sync.WaitGroup{}
+-	d := newRefreshDebouncer(2*time.Second, fn)
+-	defer d.stop()
+-	for i := 0; i < numberOfEvents; i++ {
+-		eventsWg.Add(1)
+-		go func() {
+-			defer eventsWg.Done()
+-			d.debounce()
+-		}()
+-	}
+-
+-	refreshNowWg := sync.WaitGroup{}
+-	refreshNowWg.Add(1)
+-	go func() {
+-		defer refreshNowWg.Done()
+-		time.Sleep(1500 * time.Millisecond)
+-		d.refreshNow()
+-	}()
+-
+-	eventsWg.Wait()
+-	select {
+-	case <-channel:
+-		t.Fatalf("function was called before the expected time")
+-	default:
+-	}
+-
+-	refreshNowWg.Wait()
+-
+-	timeoutCh := time.After(200 * time.Millisecond) // allow for 200ms of delay to prevent flakiness
+-	select {
+-	case <-channel:
+-	case <-timeoutCh:
+-		t.Fatalf("timeout elapsed without flush function being called")
+-	}
+-	afterFunctionCall := time.Now()
+-
+-	// use 1 second instead of 1.5s to avoid timer precision issues
+-	if afterFunctionCall.Sub(beforeEvents) < 1000*time.Millisecond {
+-		t.Fatalf("function was called after %v ms instead of ~1.5 seconds", afterFunctionCall.Sub(beforeEvents).Milliseconds())
+-	}
+-
+-	// wait some time and check if function was called again
+-	time.Sleep(2500 * time.Millisecond)
+-	if len(channel) > 0 {
+-		t.Fatalf("function was called more than once")
+-	}
+-}
+-
+-// This test:
+-//
+-//	1 - Sends debounce requests when test starts
+-//	2 - Calls refreshNow() before the timer elapsed (which stops the timer) about 1 second after test starts
+-//	3 - Sends more debounce requests (which resets the timer with a 3-second interval) about 2 seconds after test starts
+-//
+-// The end result should be 2 refresh function calls:
+-//
+-//	1 - When refreshNow() is called (1 second after the test starts)
+-//	2 - When the timer elapses after the second "wave" of debounce requests (5 seconds after the test starts)
+-func TestRefreshDebouncer_EventsAfterRefreshNow(t *testing.T) {
+-	const numberOfEvents = 10
+-	channel := make(chan int, numberOfEvents) // should never use more than 2 but allow for more to possibly detect bugs
+-	fn := func() error {
+-		channel <- 0
+-		return nil
+-	}
+-	beforeEvents := time.Now()
+-	wg := sync.WaitGroup{}
+-	d := newRefreshDebouncer(3*time.Second, fn)
+-	defer d.stop()
+-	for i := 0; i < numberOfEvents; i++ {
+-		wg.Add(1)
+-		go func() {
+-			defer wg.Done()
+-			d.debounce()
+-			time.Sleep(2000 * time.Millisecond)
+-			d.debounce()
+-		}()
+-	}
+-
+-	go func() {
+-		time.Sleep(1 * time.Second)
+-		d.refreshNow()
+-	}()
+-
+-	wg.Wait()
+-	timeoutCh := time.After(1500 * time.Millisecond) // extra 500ms to prevent flakiness
+-	select {
+-	case <-channel:
+-	case <-timeoutCh:
+-		t.Fatalf("timeout elapsed without flush function being called after refreshNow()")
+-	}
+-	afterFunctionCall := time.Now()
+-
+-	// use 500ms instead of 1s to avoid timer precision issues
+-	if afterFunctionCall.Sub(beforeEvents) < 500*time.Millisecond {
+-		t.Fatalf("function was called after %v ms instead of ~1 second", afterFunctionCall.Sub(beforeEvents).Milliseconds())
+-	}
+-
+-	timeoutCh = time.After(4 * time.Second) // extra 1s to prevent flakiness
+-	select {
+-	case <-channel:
+-	case <-timeoutCh:
+-		t.Fatalf("timeout elapsed without flush function being called after debounce requests")
+-	}
+-	afterSecondFunctionCall := time.Now()
+-
+-	// use 2.5s instead of 3s to avoid timer precision issues
+-	if afterSecondFunctionCall.Sub(afterFunctionCall) < 2500*time.Millisecond {
+-		t.Fatalf("function was called after %v ms instead of ~3 seconds", afterSecondFunctionCall.Sub(afterFunctionCall).Milliseconds())
+-	}
+-
+-	if len(channel) > 0 {
+-		t.Fatalf("function was called more than twice")
+-	}
+-}
+-
+-func TestErrorBroadcaster_MultipleListeners(t *testing.T) {
+-	b := newErrorBroadcaster()
+-	defer b.stop()
+-	const numberOfListeners = 10
+-	var listeners []<-chan error
+-	for i := 0; i < numberOfListeners; i++ {
+-		listeners = append(listeners, b.newListener())
+-	}
+-
+-	err := errors.New("expected error")
+-	wg := sync.WaitGroup{}
+-	result := atomic.Value{}
+-	for _, listener := range listeners {
+-		currentListener := listener
+-		wg.Add(1)
+-		go func() {
+-			defer wg.Done()
+-			receivedErr, ok := <-currentListener
+-			if !ok {
+-				result.Store(errors.New("listener was closed"))
+-			} else if receivedErr != err {
+-				result.Store(errors.New("expected received error to be the same as the one that was broadcasted"))
+-			}
+-		}()
+-	}
+-	wg.Add(1)
+-	go func() {
+-		defer wg.Done()
+-		b.broadcast(err)
+-		b.stop()
+-	}()
+-	wg.Wait()
+-	if loadedVal := result.Load(); loadedVal != nil {
+-		t.Errorf(loadedVal.(error).Error())
+-	}
+-}
+-
+-func TestErrorBroadcaster_StopWithoutBroadcast(t *testing.T) {
+-	var b = newErrorBroadcaster()
+-	defer b.stop()
+-	const numberOfListeners = 10
+-	var listeners []<-chan error
+-	for i := 0; i < numberOfListeners; i++ {
+-		listeners = append(listeners, b.newListener())
+-	}
+-
+-	wg := sync.WaitGroup{}
+-	result := atomic.Value{}
+-	for _, listener := range listeners {
+-		currentListener := listener
+-		wg.Add(1)
+-		go func() {
+-			defer wg.Done()
+-			// broadcaster stopped, expect listener to be closed
+-			_, ok := <-currentListener
+-			if ok {
+-				result.Store(errors.New("expected listener to be closed"))
+-			}
+-		}()
+-	}
+-	wg.Add(1)
+-	go func() {
+-		defer wg.Done()
+-		// call stop without broadcasting anything to current listeners
+-		b.stop()
+-	}()
+-	wg.Wait()
+-	if loadedVal := result.Load(); loadedVal != nil {
+-		t.Errorf(loadedVal.(error).Error())
+-	}
+-}
+diff --git a/integration_test.go b/integration_test.go
+index f548a82..d59836a 100644
+--- a/integration_test.go
++++ b/integration_test.go
+@@ -1,11 +1,35 @@
+-//go:build all || integration
+-// +build all integration
++//go:build integration
++// +build integration
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+ // This file groups integration tests where Cassandra has to be set up with some special integration variables
+ import (
+ 	"context"
+ 	"reflect"
+ 	"testing"
+ 	"time"
+diff --git a/keyspace_table_test.go b/keyspace_table_test.go
+index 2040d0a..0b93f62 100644
+--- a/keyspace_table_test.go
++++ b/keyspace_table_test.go
+@@ -1,5 +1,29 @@
+-//go:build all || integration
+-// +build all integration
++//go:build integration
++// +build integration
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+@@ -33,7 +57,7 @@ func TestKeyspaceTable(t *testing.T) {
+
+ 	err = createTable(session, fmt.Sprintf(`CREATE KEYSPACE %s
+ 	WITH replication = {
+-		'class' : 'SimpleStrategy',
++		'class' : 'NetworkTopologyStrategy',
+ 		'replication_factor' : 1
+ 	}`, keyspace))
+
+diff --git a/marshal_test.go b/marshal_test.go
+index 82e3276..891ee93 100644
+--- a/marshal_test.go
++++ b/marshal_test.go
+@@ -1,20 +1,42 @@
+-//go:build all || unit
+-// +build all unit
++//go:build unit
++// +build unit
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+ import (
+ 	"bytes"
+ 	"encoding/binary"
++	"gopkg.in/inf.v0"
+ 	"math"
+ 	"math/big"
+ 	"net"
+ 	"reflect"
+ 	"strings"
+ 	"testing"
+-	"time"
+-
+-	"gopkg.in/inf.v0"
+ )
+
+ type AliasInt int
+@@ -31,226 +53,6 @@ var marshalTests = []struct {
+ 	MarshalError   error
+ 	UnmarshalError error
+ }{
+-	{
+-		NativeType{proto: 2, typ: TypeVarchar},
+-		[]byte("hello world"),
+-		[]byte("hello world"),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeVarchar},
+-		[]byte("hello world"),
+-		"hello world",
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeVarchar},
+-		[]byte(nil),
+-		[]byte(nil),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeVarchar},
+-		[]byte("hello world"),
+-		MyString("hello world"),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeVarchar},
+-		[]byte("HELLO WORLD"),
+-		CustomString("hello world"),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeBlob},
+-		[]byte("hello\x00"),
+-		[]byte("hello\x00"),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeBlob},
+-		[]byte(nil),
+-		[]byte(nil),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeTimeUUID},
+-		[]byte{0x3d, 0xcd, 0x98, 0x0, 0xf3, 0xd9, 0x11, 0xbf, 0x86, 0xd4, 0xb8, 0xe8, 0x56, 0x2c, 0xc, 0xd0},
+-		func() UUID {
+-			x, _ := UUIDFromBytes([]byte{0x3d, 0xcd, 0x98, 0x0, 0xf3, 0xd9, 0x11, 0xbf, 0x86, 0xd4, 0xb8, 0xe8, 0x56, 0x2c, 0xc, 0xd0})
+-			return x
+-		}(),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeTimeUUID},
+-		[]byte{0xb8, 0xe8, 0x56, 0x2c, 0xc, 0xd0},
+-		[]byte{0xb8, 0xe8, 0x56, 0x2c, 0xc, 0xd0},
+-		MarshalError("can not marshal []byte 6 bytes long into timeuuid, must be exactly 16 bytes long"),
+-		UnmarshalError("unable to parse UUID: UUIDs must be exactly 16 bytes long"),
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeTimeUUID},
+-		[]byte{0x3d, 0xcd, 0x98, 0x0, 0xf3, 0xd9, 0x11, 0xbf, 0x86, 0xd4, 0xb8, 0xe8, 0x56, 0x2c, 0xc, 0xd0},
+-		[16]byte{0x3d, 0xcd, 0x98, 0x0, 0xf3, 0xd9, 0x11, 0xbf, 0x86, 0xd4, 0xb8, 0xe8, 0x56, 0x2c, 0xc, 0xd0},
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeInt},
+-		[]byte("\x00\x00\x00\x00"),
+-		0,
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeInt},
+-		[]byte("\x01\x02\x03\x04"),
+-		int(16909060),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeInt},
+-		[]byte("\x01\x02\x03\x04"),
+-		AliasInt(16909060),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeInt},
+-		[]byte("\x80\x00\x00\x00"),
+-		int32(math.MinInt32),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeInt},
+-		[]byte("\x7f\xff\xff\xff"),
+-		int32(math.MaxInt32),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeInt},
+-		[]byte("\x00\x00\x00\x00"),
+-		"0",
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeInt},
+-		[]byte("\x01\x02\x03\x04"),
+-		"16909060",
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeInt},
+-		[]byte("\x80\x00\x00\x00"),
+-		"-2147483648", // math.MinInt32
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeInt},
+-		[]byte("\x7f\xff\xff\xff"),
+-		"2147483647", // math.MaxInt32
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeBigInt},
+-		[]byte("\x00\x00\x00\x00\x00\x00\x00\x00"),
+-		0,
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeBigInt},
+-		[]byte("\x01\x02\x03\x04\x05\x06\x07\x08"),
+-		72623859790382856,
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeBigInt},
+-		[]byte("\x80\x00\x00\x00\x00\x00\x00\x00"),
+-		int64(math.MinInt64),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeBigInt},
+-		[]byte("\x7f\xff\xff\xff\xff\xff\xff\xff"),
+-		int64(math.MaxInt64),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeBigInt},
+-		[]byte("\x00\x00\x00\x00\x00\x00\x00\x00"),
+-		"0",
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeBigInt},
+-		[]byte("\x01\x02\x03\x04\x05\x06\x07\x08"),
+-		"72623859790382856",
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeBigInt},
+-		[]byte("\x80\x00\x00\x00\x00\x00\x00\x00"),
+-		"-9223372036854775808", // math.MinInt64
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeBigInt},
+-		[]byte("\x7f\xff\xff\xff\xff\xff\xff\xff"),
+-		"9223372036854775807", // math.MaxInt64
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeBoolean},
+-		[]byte("\x00"),
+-		false,
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeBoolean},
+-		[]byte("\x01"),
+-		true,
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeFloat},
+-		[]byte("\x40\x49\x0f\xdb"),
+-		float32(3.14159265),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeDouble},
+-		[]byte("\x40\x09\x21\xfb\x53\xc8\xd4\xf1"),
+-		float64(3.14159265),
+-		nil,
+-		nil,
+-	},
+ 	{
+ 		NativeType{proto: 2, typ: TypeDecimal},
+ 		[]byte("\x00\x00\x00\x00\x00"),
+@@ -328,55 +130,6 @@ var marshalTests = []struct {
+ 		nil,
+ 		nil,
+ 	},
+-	{
+-		NativeType{proto: 4, typ: TypeTime},
+-		[]byte("\x00\x00\x01\x40\x77\x16\xe1\xb8"),
+-		time.Duration(int64(1376387523000)),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 4, typ: TypeTime},
+-		[]byte("\x00\x00\x01\x40\x77\x16\xe1\xb8"),
+-		int64(1376387523000),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeTimestamp},
+-		[]byte("\x00\x00\x01\x40\x77\x16\xe1\xb8"),
+-		time.Date(2013, time.August, 13, 9, 52, 3, 0, time.UTC),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeTimestamp},
+-		[]byte("\x00\x00\x01\x40\x77\x16\xe1\xb8"),
+-		int64(1376387523000),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 5, typ: TypeDuration},
+-		[]byte("\x89\xa2\xc3\xc2\x9a\xe0F\x91\x06"),
+-		Duration{Months: 1233, Days: 123213, Nanoseconds: 2312323},
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 5, typ: TypeDuration},
+-		[]byte("\x89\xa1\xc3\xc2\x99\xe0F\x91\x05"),
+-		Duration{Months: -1233, Days: -123213, Nanoseconds: -2312323},
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 5, typ: TypeDuration},
+-		[]byte("\x02\x04\x80\xe6"),
+-		Duration{Months: 1, Days: 2, Nanoseconds: 115},
+-		nil,
+-		nil,
+-	},
+ 	{
+ 		CollectionType{
+ 			NativeType: NativeType{proto: 2, typ: TypeList},
+@@ -481,55 +234,6 @@ var marshalTests = []struct {
+ 		nil,
+ 		nil,
+ 	},
+-	{
+-		NativeType{proto: 2, typ: TypeVarint},
+-		[]byte("\x00"),
+-		0,
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeVarint},
+-		[]byte("\x37\xE2\x3C\xEC"),
+-		int32(937573612),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeVarint},
+-		[]byte("\x37\xE2\x3C\xEC"),
+-		big.NewInt(937573612),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeVarint},
+-		[]byte("\x03\x9EV \x15\f\x03\x9DK\x18\xCDI\\$?\a["),
+-		bigintize("1231312312331283012830129382342342412123"), // From the iconara/cql-rb test suite
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeVarint},
+-		[]byte("\xC9v\x8D:\x86"),
+-		big.NewInt(-234234234234), // From the iconara/cql-rb test suite
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeVarint},
+-		[]byte("f\x1e\xfd\xf2\xe3\xb1\x9f|\x04_\x15"),
+-		bigintize("123456789123456789123456789"), // From the datastax/python-driver test suite
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeVarint},
+-		[]byte(nil),
+-		nil,
+-		nil,
+-		UnmarshalError("can not unmarshal into non-pointer <nil>"),
+-	},
+ 	{
+ 		NativeType{proto: 2, typ: TypeInet},
+ 		[]byte("\x7F\x00\x00\x01"),
+@@ -586,139 +290,6 @@ var marshalTests = []struct {
+ 		nil,
+ 		nil,
+ 	},
+-	{
+-		NativeType{proto: 2, typ: TypeInt},
+-		[]byte(nil),
+-		nil,
+-		nil,
+-		UnmarshalError("can not unmarshal into non-pointer <nil>"),
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeVarchar},
+-		[]byte("nullable string"),
+-		func() *string {
+-			value := "nullable string"
+-			return &value
+-		}(),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeVarchar},
+-		[]byte(nil),
+-		(*string)(nil),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeInt},
+-		[]byte("\x7f\xff\xff\xff"),
+-		func() *int {
+-			var value int = math.MaxInt32
+-			return &value
+-		}(),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeInt},
+-		[]byte(nil),
+-		(*int)(nil),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeTimeUUID},
+-		[]byte{0x3d, 0xcd, 0x98, 0x0, 0xf3, 0xd9, 0x11, 0xbf, 0x86, 0xd4, 0xb8, 0xe8, 0x56, 0x2c, 0xc, 0xd0},
+-		&UUID{0x3d, 0xcd, 0x98, 0x0, 0xf3, 0xd9, 0x11, 0xbf, 0x86, 0xd4, 0xb8, 0xe8, 0x56, 0x2c, 0xc, 0xd0},
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeTimeUUID},
+-		[]byte(nil),
+-		(*UUID)(nil),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeTimestamp},
+-		[]byte("\x00\x00\x01\x40\x77\x16\xe1\xb8"),
+-		func() *time.Time {
+-			t := time.Date(2013, time.August, 13, 9, 52, 3, 0, time.UTC)
+-			return &t
+-		}(),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeTimestamp},
+-		[]byte(nil),
+-		(*time.Time)(nil),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeBoolean},
+-		[]byte("\x00"),
+-		func() *bool {
+-			b := false
+-			return &b
+-		}(),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeBoolean},
+-		[]byte("\x01"),
+-		func() *bool {
+-			b := true
+-			return &b
+-		}(),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeBoolean},
+-		[]byte(nil),
+-		(*bool)(nil),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeFloat},
+-		[]byte("\x40\x49\x0f\xdb"),
+-		func() *float32 {
+-			f := float32(3.14159265)
+-			return &f
+-		}(),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeFloat},
+-		[]byte(nil),
+-		(*float32)(nil),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeDouble},
+-		[]byte("\x40\x09\x21\xfb\x53\xc8\xd4\xf1"),
+-		func() *float64 {
+-			d := float64(3.14159265)
+-			return &d
+-		}(),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeDouble},
+-		[]byte(nil),
+-		(*float64)(nil),
+-		nil,
+-		nil,
+-	},
+ 	{
+ 		NativeType{proto: 2, typ: TypeInet},
+ 		[]byte("\x7F\x00\x00\x01"),
+@@ -797,114 +368,6 @@ var marshalTests = []struct {
+ 		nil,
+ 		nil,
+ 	},
+-	{
+-		NativeType{proto: 2, typ: TypeVarchar},
+-		[]byte("HELLO WORLD"),
+-		func() *CustomString {
+-			customString := CustomString("hello world")
+-			return &customString
+-		}(),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeVarchar},
+-		[]byte(nil),
+-		(*CustomString)(nil),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeSmallInt},
+-		[]byte("\x7f\xff"),
+-		32767, // math.MaxInt16
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeSmallInt},
+-		[]byte("\x7f\xff"),
+-		"32767", // math.MaxInt16
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeSmallInt},
+-		[]byte("\x00\x01"),
+-		int16(1),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeSmallInt},
+-		[]byte("\xff\xff"),
+-		int16(-1),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeSmallInt},
+-		[]byte("\x00\xff"),
+-		uint8(255),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeSmallInt},
+-		[]byte("\xff\xff"),
+-		uint16(65535),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeSmallInt},
+-		[]byte("\xff\xff"),
+-		uint32(65535),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeSmallInt},
+-		[]byte("\xff\xff"),
+-		uint64(65535),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeSmallInt},
+-		[]byte("\x00\xff"),
+-		AliasUint8(255),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeSmallInt},
+-		[]byte("\xff\xff"),
+-		AliasUint16(65535),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeSmallInt},
+-		[]byte("\xff\xff"),
+-		AliasUint32(65535),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeSmallInt},
+-		[]byte("\xff\xff"),
+-		AliasUint64(65535),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeSmallInt},
+-		[]byte("\xff\xff"),
+-		AliasUint(65535),
+-		nil,
+-		nil,
+-	},
+ 	{
+ 		NativeType{proto: 2, typ: TypeTinyInt},
+ 		[]byte("\x7f"),
+@@ -956,116 +419,50 @@ var marshalTests = []struct {
+ 	},
+ 	{
+ 		NativeType{proto: 2, typ: TypeTinyInt},
+-		[]byte("\xff"),
+-		uint16(255),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeTinyInt},
+-		[]byte("\xff"),
+-		uint(255),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeTinyInt},
+-		[]byte("\xff"),
+-		AliasUint8(255),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeTinyInt},
+-		[]byte("\xff"),
+-		AliasUint64(255),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeTinyInt},
+-		[]byte("\xff"),
+-		AliasUint32(255),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeTinyInt},
+-		[]byte("\xff"),
+-		AliasUint16(255),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeTinyInt},
+-		[]byte("\xff"),
+-		AliasUint(255),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeBigInt},
+-		[]byte("\x00\x00\x00\x00\x00\x00\x00\xff"),
+-		uint8(math.MaxUint8),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeBigInt},
+-		[]byte("\x00\x00\x00\x00\x00\x00\xff\xff"),
+-		uint64(math.MaxUint16),
+-		nil,
+-		nil,
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeBigInt},
+-		[]byte("\x00\x00\x00\x00\xff\xff\xff\xff"),
+-		uint64(math.MaxUint32),
++		[]byte("\xff"),
++		uint16(255),
+ 		nil,
+ 		nil,
+ 	},
+ 	{
+-		NativeType{proto: 2, typ: TypeBigInt},
+-		[]byte("\xff\xff\xff\xff\xff\xff\xff\xff"),
+-		uint64(math.MaxUint64),
++		NativeType{proto: 2, typ: TypeTinyInt},
++		[]byte("\xff"),
++		uint(255),
+ 		nil,
+ 		nil,
+ 	},
+ 	{
+-		NativeType{proto: 2, typ: TypeInt},
+-		[]byte("\xff\xff\xff\xff"),
+-		uint32(math.MaxUint32),
++		NativeType{proto: 2, typ: TypeTinyInt},
++		[]byte("\xff"),
++		AliasUint8(255),
+ 		nil,
+ 		nil,
+ 	},
+ 	{
+-		NativeType{proto: 2, typ: TypeInt},
+-		[]byte("\xff\xff\xff\xff"),
+-		uint64(math.MaxUint32),
++		NativeType{proto: 2, typ: TypeTinyInt},
++		[]byte("\xff"),
++		AliasUint64(255),
+ 		nil,
+ 		nil,
+ 	},
+ 	{
+-		NativeType{proto: 2, typ: TypeBlob},
+-		[]byte(nil),
+-		([]byte)(nil),
++		NativeType{proto: 2, typ: TypeTinyInt},
++		[]byte("\xff"),
++		AliasUint32(255),
+ 		nil,
+ 		nil,
+ 	},
+ 	{
+-		NativeType{proto: 2, typ: TypeVarchar},
+-		[]byte{},
+-		func() interface{} {
+-			var s string
+-			return &s
+-		}(),
++		NativeType{proto: 2, typ: TypeTinyInt},
++		[]byte("\xff"),
++		AliasUint16(255),
+ 		nil,
+ 		nil,
+ 	},
+ 	{
+-		NativeType{proto: 2, typ: TypeTime},
+-		encBigInt(1000),
+-		time.Duration(1000),
++		NativeType{proto: 2, typ: TypeTinyInt},
++		[]byte("\xff"),
++		AliasUint(255),
+ 		nil,
+ 		nil,
+ 	},
+@@ -1077,174 +474,6 @@ var unmarshalTests = []struct {
+ 	Value          interface{}
+ 	UnmarshalError error
+ }{
+-	{
+-		NativeType{proto: 2, typ: TypeSmallInt},
+-		[]byte("\xff\xff"),
+-		uint8(0),
+-		UnmarshalError("unmarshal int: value -1 out of range for uint8"),
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeSmallInt},
+-		[]byte("\x01\x00"),
+-		uint8(0),
+-		UnmarshalError("unmarshal int: value 256 out of range for uint8"),
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeInt},
+-		[]byte("\xff\xff\xff\xff"),
+-		uint8(0),
+-		UnmarshalError("unmarshal int: value -1 out of range for uint8"),
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeInt},
+-		[]byte("\x00\x00\x01\x00"),
+-		uint8(0),
+-		UnmarshalError("unmarshal int: value 256 out of range for uint8"),
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeInt},
+-		[]byte("\xff\xff\xff\xff"),
+-		uint16(0),
+-		UnmarshalError("unmarshal int: value -1 out of range for uint16"),
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeInt},
+-		[]byte("\x00\x01\x00\x00"),
+-		uint16(0),
+-		UnmarshalError("unmarshal int: value 65536 out of range for uint16"),
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeBigInt},
+-		[]byte("\xff\xff\xff\xff\xff\xff\xff\xff"),
+-		uint8(0),
+-		UnmarshalError("unmarshal int: value -1 out of range for uint8"),
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeBigInt},
+-		[]byte("\x00\x00\x00\x00\x00\x00\x01\x00"),
+-		uint8(0),
+-		UnmarshalError("unmarshal int: value 256 out of range for uint8"),
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeBigInt},
+-		[]byte("\xff\xff\xff\xff\xff\xff\xff\xff"),
+-		uint8(0),
+-		UnmarshalError("unmarshal int: value -1 out of range for uint8"),
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeBigInt},
+-		[]byte("\x00\x00\x00\x00\x00\x00\x01\x00"),
+-		uint8(0),
+-		UnmarshalError("unmarshal int: value 256 out of range for uint8"),
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeBigInt},
+-		[]byte("\xff\xff\xff\xff\xff\xff\xff\xff"),
+-		uint16(0),
+-		UnmarshalError("unmarshal int: value -1 out of range for uint16"),
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeBigInt},
+-		[]byte("\x00\x00\x00\x00\x00\x01\x00\x00"),
+-		uint16(0),
+-		UnmarshalError("unmarshal int: value 65536 out of range for uint16"),
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeBigInt},
+-		[]byte("\xff\xff\xff\xff\xff\xff\xff\xff"),
+-		uint32(0),
+-		UnmarshalError("unmarshal int: value -1 out of range for uint32"),
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeBigInt},
+-		[]byte("\x00\x00\x00\x01\x00\x00\x00\x00"),
+-		uint32(0),
+-		UnmarshalError("unmarshal int: value 4294967296 out of range for uint32"),
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeSmallInt},
+-		[]byte("\xff\xff"),
+-		AliasUint8(0),
+-		UnmarshalError("unmarshal int: value -1 out of range for gocql.AliasUint8"),
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeSmallInt},
+-		[]byte("\x01\x00"),
+-		AliasUint8(0),
+-		UnmarshalError("unmarshal int: value 256 out of range for gocql.AliasUint8"),
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeInt},
+-		[]byte("\xff\xff\xff\xff"),
+-		AliasUint8(0),
+-		UnmarshalError("unmarshal int: value -1 out of range for gocql.AliasUint8"),
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeInt},
+-		[]byte("\x00\x00\x01\x00"),
+-		AliasUint8(0),
+-		UnmarshalError("unmarshal int: value 256 out of range for gocql.AliasUint8"),
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeInt},
+-		[]byte("\xff\xff\xff\xff"),
+-		AliasUint16(0),
+-		UnmarshalError("unmarshal int: value -1 out of range for gocql.AliasUint16"),
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeInt},
+-		[]byte("\x00\x01\x00\x00"),
+-		AliasUint16(0),
+-		UnmarshalError("unmarshal int: value 65536 out of range for gocql.AliasUint16"),
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeBigInt},
+-		[]byte("\xff\xff\xff\xff\xff\xff\xff\xff"),
+-		AliasUint8(0),
+-		UnmarshalError("unmarshal int: value -1 out of range for gocql.AliasUint8"),
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeBigInt},
+-		[]byte("\x00\x00\x00\x00\x00\x00\x01\x00"),
+-		AliasUint8(0),
+-		UnmarshalError("unmarshal int: value 256 out of range for gocql.AliasUint8"),
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeBigInt},
+-		[]byte("\xff\xff\xff\xff\xff\xff\xff\xff"),
+-		AliasUint8(0),
+-		UnmarshalError("unmarshal int: value -1 out of range for gocql.AliasUint8"),
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeBigInt},
+-		[]byte("\x00\x00\x00\x00\x00\x00\x01\x00"),
+-		AliasUint8(0),
+-		UnmarshalError("unmarshal int: value 256 out of range for gocql.AliasUint8"),
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeBigInt},
+-		[]byte("\xff\xff\xff\xff\xff\xff\xff\xff"),
+-		AliasUint16(0),
+-		UnmarshalError("unmarshal int: value -1 out of range for gocql.AliasUint16"),
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeBigInt},
+-		[]byte("\x00\x00\x00\x00\x00\x01\x00\x00"),
+-		AliasUint16(0),
+-		UnmarshalError("unmarshal int: value 65536 out of range for gocql.AliasUint16"),
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeBigInt},
+-		[]byte("\xff\xff\xff\xff\xff\xff\xff\xff"),
+-		AliasUint32(0),
+-		UnmarshalError("unmarshal int: value -1 out of range for gocql.AliasUint32"),
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeBigInt},
+-		[]byte("\x00\x00\x00\x01\x00\x00\x00\x00"),
+-		AliasUint32(0),
+-		UnmarshalError("unmarshal int: value 4294967296 out of range for gocql.AliasUint32"),
+-	},
+ 	{
+ 		CollectionType{
+ 			NativeType: NativeType{proto: 3, typ: TypeList},
+@@ -1255,7 +484,7 @@ var unmarshalTests = []struct {
+ 			l := []int{1, 2}
+ 			return &l
+ 		}(),
+-		UnmarshalError("unmarshal list: unexpected eof"),
++		unmarshalErrorf("unmarshal list: unexpected eof"),
+ 	},
+ 	{
+ 		CollectionType{
+@@ -1265,7 +494,7 @@ var unmarshalTests = []struct {
+ 		},
+ 		[]byte("\x00\x01\x00\x03fo"),
+ 		map[string]int{"foo": 1},
+-		UnmarshalError("unmarshal map: unexpected eof"),
++		unmarshalErrorf("unmarshal map: unexpected eof"),
+ 	},
+ 	{
+ 		CollectionType{
+@@ -1275,43 +504,7 @@ var unmarshalTests = []struct {
+ 		},
+ 		[]byte("\x00\x01\x00\x03foo\x00\x04\x00\x00"),
+ 		map[string]int{"foo": 1},
+-		UnmarshalError("unmarshal map: unexpected eof"),
+-	},
+-	{
+-		NativeType{proto: 2, typ: TypeDecimal},
+-		[]byte("\xff\xff\xff"),
+-		inf.NewDec(0, 0), // From the datastax/python-driver test suite
+-		UnmarshalError("inf.Dec needs at least 4 bytes, while value has only 3"),
+-	},
+-	{
+-		NativeType{proto: 5, typ: TypeDuration},
+-		[]byte("\x89\xa2\xc3\xc2\x9a\xe0F\x91"),
+-		Duration{},
+-		UnmarshalError("failed to unmarshal duration into *gocql.Duration: failed to extract nanoseconds: data expect to have 9 bytes, but it has only 8"),
+-	},
+-	{
+-		NativeType{proto: 5, typ: TypeDuration},
+-		[]byte("\x89\xa2\xc3\xc2\x9a"),
+-		Duration{},
+-		UnmarshalError("failed to unmarshal duration into *gocql.Duration: failed to extract nanoseconds: unexpected eof"),
+-	},
+-	{
+-		NativeType{proto: 5, typ: TypeDuration},
+-		[]byte("\x89\xa2\xc3\xc2"),
+-		Duration{},
+-		UnmarshalError("failed to unmarshal duration into *gocql.Duration: failed to extract days: data expect to have 5 bytes, but it has only 4"),
+-	},
+-	{
+-		NativeType{proto: 5, typ: TypeDuration},
+-		[]byte("\x89\xa2"),
+-		Duration{},
+-		UnmarshalError("failed to unmarshal duration into *gocql.Duration: failed to extract days: unexpected eof"),
+-	},
+-	{
+-		NativeType{proto: 5, typ: TypeDuration},
+-		[]byte("\x89"),
+-		Duration{},
+-		UnmarshalError("failed to unmarshal duration into *gocql.Duration: failed to extract month: data expect to have 2 bytes, but it has only 1"),
++		unmarshalErrorf("unmarshal map: unexpected eof"),
+ 	},
+ }
+
+@@ -1381,149 +574,6 @@ func TestMarshal_Decode(t *testing.T) {
+ 	}
+ }
+
+-func TestMarshalVarint(t *testing.T) {
+-	varintTests := []struct {
+-		Value       interface{}
+-		Marshaled   []byte
+-		Unmarshaled *big.Int
+-	}{
+-		{
+-			Value:       int8(0),
+-			Marshaled:   []byte("\x00"),
+-			Unmarshaled: big.NewInt(0),
+-		},
+-		{
+-			Value:       uint8(255),
+-			Marshaled:   []byte("\x00\xFF"),
+-			Unmarshaled: big.NewInt(255),
+-		},
+-		{
+-			Value:       int8(-1),
+-			Marshaled:   []byte("\xFF"),
+-			Unmarshaled: big.NewInt(-1),
+-		},
+-		{
+-			Value:       big.NewInt(math.MaxInt32),
+-			Marshaled:   []byte("\x7F\xFF\xFF\xFF"),
+-			Unmarshaled: big.NewInt(math.MaxInt32),
+-		},
+-		{
+-			Value:       big.NewInt(int64(math.MaxInt32) + 1),
+-			Marshaled:   []byte("\x00\x80\x00\x00\x00"),
+-			Unmarshaled: big.NewInt(int64(math.MaxInt32) + 1),
+-		},
+-		{
+-			Value:       big.NewInt(math.MinInt32),
+-			Marshaled:   []byte("\x80\x00\x00\x00"),
+-			Unmarshaled: big.NewInt(math.MinInt32),
+-		},
+-		{
+-			Value:       big.NewInt(int64(math.MinInt32) - 1),
+-			Marshaled:   []byte("\xFF\x7F\xFF\xFF\xFF"),
+-			Unmarshaled: big.NewInt(int64(math.MinInt32) - 1),
+-		},
+-		{
+-			Value:       math.MinInt64,
+-			Marshaled:   []byte("\x80\x00\x00\x00\x00\x00\x00\x00"),
+-			Unmarshaled: big.NewInt(math.MinInt64),
+-		},
+-		{
+-			Value:       uint64(math.MaxInt64) + 1,
+-			Marshaled:   []byte("\x00\x80\x00\x00\x00\x00\x00\x00\x00"),
+-			Unmarshaled: bigintize("9223372036854775808"),
+-		},
+-		{
+-			Value:       bigintize("2361183241434822606848"), // 2**71
+-			Marshaled:   []byte("\x00\x80\x00\x00\x00\x00\x00\x00\x00\x00"),
+-			Unmarshaled: bigintize("2361183241434822606848"),
+-		},
+-		{
+-			Value:       bigintize("-9223372036854775809"), // -2**63 - 1
+-			Marshaled:   []byte("\xFF\x7F\xFF\xFF\xFF\xFF\xFF\xFF\xFF"),
+-			Unmarshaled: bigintize("-9223372036854775809"),
+-		},
+-	}
+-
+-	for i, test := range varintTests {
+-		data, err := Marshal(NativeType{proto: 2, typ: TypeVarint}, test.Value)
+-		if err != nil {
+-			t.Errorf("error marshaling varint: %v (test #%d)", err, i)
+-		}
+-
+-		if !bytes.Equal(test.Marshaled, data) {
+-			t.Errorf("marshaled varint mismatch: expected %v, got %v (test #%d)", test.Marshaled, data, i)
+-		}
+-
+-		binder := new(big.Int)
+-		err = Unmarshal(NativeType{proto: 2, typ: TypeVarint}, test.Marshaled, binder)
+-		if err != nil {
+-			t.Errorf("error unmarshaling varint: %v (test #%d)", err, i)
+-		}
+-
+-		if test.Unmarshaled.Cmp(binder) != 0 {
+-			t.Errorf("unmarshaled varint mismatch: expected %v, got %v (test #%d)", test.Unmarshaled, binder, i)
+-		}
+-	}
+-
+-	varintUint64Tests := []struct {
+-		Value       interface{}
+-		Marshaled   []byte
+-		Unmarshaled uint64
+-	}{
+-		{
+-			Value:       int8(0),
+-			Marshaled:   []byte("\x00"),
+-			Unmarshaled: 0,
+-		},
+-		{
+-			Value:       uint8(255),
+-			Marshaled:   []byte("\x00\xFF"),
+-			Unmarshaled: 255,
+-		},
+-		{
+-			Value:       big.NewInt(math.MaxInt32),
+-			Marshaled:   []byte("\x7F\xFF\xFF\xFF"),
+-			Unmarshaled: uint64(math.MaxInt32),
+-		},
+-		{
+-			Value:       big.NewInt(int64(math.MaxInt32) + 1),
+-			Marshaled:   []byte("\x00\x80\x00\x00\x00"),
+-			Unmarshaled: uint64(int64(math.MaxInt32) + 1),
+-		},
+-		{
+-			Value:       uint64(math.MaxInt64) + 1,
+-			Marshaled:   []byte("\x00\x80\x00\x00\x00\x00\x00\x00\x00"),
+-			Unmarshaled: 9223372036854775808,
+-		},
+-		{
+-			Value:       uint64(math.MaxUint64),
+-			Marshaled:   []byte("\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"),
+-			Unmarshaled: uint64(math.MaxUint64),
+-		},
+-	}
+-
+-	for i, test := range varintUint64Tests {
+-		data, err := Marshal(NativeType{proto: 2, typ: TypeVarint}, test.Value)
+-		if err != nil {
+-			t.Errorf("error marshaling varint: %v (test #%d)", err, i)
+-		}
+-
+-		if !bytes.Equal(test.Marshaled, data) {
+-			t.Errorf("marshaled varint mismatch: expected %v, got %v (test #%d)", test.Marshaled, data, i)
+-		}
+-
+-		var binder uint64
+-		err = Unmarshal(NativeType{proto: 2, typ: TypeVarint}, test.Marshaled, &binder)
+-		if err != nil {
+-			t.Errorf("error unmarshaling varint to uint64: %v (test #%d)", err, i)
+-		}
+-
+-		if test.Unmarshaled != binder {
+-			t.Errorf("unmarshaled varint mismatch: expected %v, got %v (test #%d)", test.Unmarshaled, binder, i)
+-		}
+-	}
+-}
+-
+ func equalStringPointerSlice(leftList, rightList []*string) bool {
+ 	if len(leftList) != len(rightList) {
+ 		return false
+@@ -1712,112 +762,6 @@ func TestMarshalPointer(t *testing.T) {
+ 	}
+ }
+
+-func TestMarshalTime(t *testing.T) {
+-	durationS := "1h10m10s"
+-	duration, _ := time.ParseDuration(durationS)
+-	expectedData := encBigInt(duration.Nanoseconds())
+-	var marshalTimeTests = []struct {
+-		Info  TypeInfo
+-		Data  []byte
+-		Value interface{}
+-	}{
+-		{
+-			NativeType{proto: 4, typ: TypeTime},
+-			expectedData,
+-			duration.Nanoseconds(),
+-		},
+-		{
+-			NativeType{proto: 4, typ: TypeTime},
+-			expectedData,
+-			duration,
+-		},
+-		{
+-			NativeType{proto: 4, typ: TypeTime},
+-			expectedData,
+-			&duration,
+-		},
+-	}
+-
+-	for i, test := range marshalTimeTests {
+-		t.Log(i, test)
+-		data, err := Marshal(test.Info, test.Value)
+-		if err != nil {
+-			t.Errorf("marshalTest[%d]: %v", i, err)
+-			continue
+-		}
+-		if !bytes.Equal(data, test.Data) {
+-			t.Errorf("marshalTest[%d]: expected %x (%v), got %x (%v) for time %s", i,
+-				test.Data, decInt(test.Data), data, decInt(data), test.Value)
+-		}
+-	}
+-}
+-
+-func TestMarshalTimestamp(t *testing.T) {
+-	var marshalTimestampTests = []struct {
+-		Info  TypeInfo
+-		Data  []byte
+-		Value interface{}
+-	}{
+-		{
+-			NativeType{proto: 2, typ: TypeTimestamp},
+-			[]byte("\x00\x00\x01\x40\x77\x16\xe1\xb8"),
+-			time.Date(2013, time.August, 13, 9, 52, 3, 0, time.UTC),
+-		},
+-		{
+-			NativeType{proto: 2, typ: TypeTimestamp},
+-			[]byte("\x00\x00\x01\x40\x77\x16\xe1\xb8"),
+-			int64(1376387523000),
+-		},
+-		{
+-			// 9223372036854 is the maximum time representable in ms since the epoch
+-			// with int64 if using UnixNano to convert
+-			NativeType{proto: 2, typ: TypeTimestamp},
+-			[]byte("\x00\x00\x08\x63\x7b\xd0\x5a\xf6"),
+-			time.Date(2262, time.April, 11, 23, 47, 16, 854775807, time.UTC),
+-		},
+-		{
+-			// One nanosecond after causes overflow when using UnixNano
+-			// Instead it should resolve to the same time in ms
+-			NativeType{proto: 2, typ: TypeTimestamp},
+-			[]byte("\x00\x00\x08\x63\x7b\xd0\x5a\xf6"),
+-			time.Date(2262, time.April, 11, 23, 47, 16, 854775808, time.UTC),
+-		},
+-		{
+-			// -9223372036855 is the minimum time representable in ms since the epoch
+-			// with int64 if using UnixNano to convert
+-			NativeType{proto: 2, typ: TypeTimestamp},
+-			[]byte("\xff\xff\xf7\x9c\x84\x2f\xa5\x09"),
+-			time.Date(1677, time.September, 21, 00, 12, 43, 145224192, time.UTC),
+-		},
+-		{
+-			// One nanosecond earlier causes overflow when using UnixNano
+-			// it should resolve to the same time in ms
+-			NativeType{proto: 2, typ: TypeTimestamp},
+-			[]byte("\xff\xff\xf7\x9c\x84\x2f\xa5\x09"),
+-			time.Date(1677, time.September, 21, 00, 12, 43, 145224191, time.UTC),
+-		},
+-		{
+-			// Store the zero time as a blank slice
+-			NativeType{proto: 2, typ: TypeTimestamp},
+-			[]byte{},
+-			time.Time{},
+-		},
+-	}
+-
+-	for i, test := range marshalTimestampTests {
+-		t.Log(i, test)
+-		data, err := Marshal(test.Info, test.Value)
+-		if err != nil {
+-			t.Errorf("marshalTest[%d]: %v", i, err)
+-			continue
+-		}
+-		if !bytes.Equal(data, test.Data) {
+-			t.Errorf("marshalTest[%d]: expected %x (%v), got %x (%v) for time %s", i,
+-				test.Data, decBigInt(test.Data), data, decBigInt(data), test.Value)
+-		}
+-	}
+-}
+-
+ func TestMarshalTuple(t *testing.T) {
+ 	info := TupleTypeInfo{
+ 		NativeType: NativeType{proto: 3, typ: TypeTuple},
+@@ -2196,7 +1140,7 @@ func TestMarshalNil(t *testing.T) {
+ func TestUnmarshalInetCopyBytes(t *testing.T) {
+ 	data := []byte{127, 0, 0, 1}
+ 	var ip net.IP
+-	if err := unmarshalInet(NativeType{proto: 2, typ: TypeInet}, data, &ip); err != nil {
++	if err := unmarshalInet(data, &ip); err != nil {
+ 		t.Fatal(err)
+ 	}
+
+@@ -2207,126 +1151,6 @@ func TestUnmarshalInetCopyBytes(t *testing.T) {
+ 	}
+ }
+
+-func TestUnmarshalDate(t *testing.T) {
+-	data := []uint8{0x80, 0x0, 0x43, 0x31}
+-	var date time.Time
+-	if err := unmarshalDate(NativeType{proto: 2, typ: TypeDate}, data, &date); err != nil {
+-		t.Fatal(err)
+-	}
+-
+-	expectedDate := "2017-02-04"
+-	formattedDate := date.Format("2006-01-02")
+-	if expectedDate != formattedDate {
+-		t.Errorf("marshalTest: expected %v, got %v", expectedDate, formattedDate)
+-		return
+-	}
+-	var stringDate string
+-	if err2 := unmarshalDate(NativeType{proto: 2, typ: TypeDate}, data, &stringDate); err2 != nil {
+-		t.Fatal(err2)
+-	}
+-	if expectedDate != stringDate {
+-		t.Errorf("marshalTest: expected %v, got %v", expectedDate, formattedDate)
+-		return
+-	}
+-}
+-
+-func TestMarshalDate(t *testing.T) {
+-	now := time.Now().UTC()
+-	timestamp := now.UnixNano() / int64(time.Millisecond)
+-	expectedData := encInt(int32(timestamp/86400000 + int64(1<<31)))
+-
+-	var marshalDateTests = []struct {
+-		Info  TypeInfo
+-		Data  []byte
+-		Value interface{}
+-	}{
+-		{
+-			NativeType{proto: 4, typ: TypeDate},
+-			expectedData,
+-			timestamp,
+-		},
+-		{
+-			NativeType{proto: 4, typ: TypeDate},
+-			expectedData,
+-			now,
+-		},
+-		{
+-			NativeType{proto: 4, typ: TypeDate},
+-			expectedData,
+-			&now,
+-		},
+-		{
+-			NativeType{proto: 4, typ: TypeDate},
+-			expectedData,
+-			now.Format("2006-01-02"),
+-		},
+-	}
+-
+-	for i, test := range marshalDateTests {
+-		t.Log(i, test)
+-		data, err := Marshal(test.Info, test.Value)
+-		if err != nil {
+-			t.Errorf("marshalTest[%d]: %v", i, err)
+-			continue
+-		}
+-		if !bytes.Equal(data, test.Data) {
+-			t.Errorf("marshalTest[%d]: expected %x (%v), got %x (%v) for time %s", i,
+-				test.Data, decInt(test.Data), data, decInt(data), test.Value)
+-		}
+-	}
+-}
+-
+-func TestLargeDate(t *testing.T) {
+-	farFuture := time.Date(999999, time.December, 31, 0, 0, 0, 0, time.UTC)
+-	expectedFutureData := encInt(int32(farFuture.UnixMilli()/86400000 + int64(1<<31)))
+-
+-	farPast := time.Date(-999999, time.January, 1, 0, 0, 0, 0, time.UTC)
+-	expectedPastData := encInt(int32(farPast.UnixMilli()/86400000 + int64(1<<31)))
+-
+-	var marshalDateTests = []struct {
+-		Data         []byte
+-		Value        interface{}
+-		ExpectedDate string
+-	}{
+-		{
+-			expectedFutureData,
+-			farFuture,
+-			"999999-12-31",
+-		},
+-		{
+-			expectedPastData,
+-			farPast,
+-			"-999999-01-01",
+-		},
+-	}
+-
+-	nativeType := NativeType{proto: 4, typ: TypeDate}
+-
+-	for i, test := range marshalDateTests {
+-		t.Log(i, test)
+-
+-		data, err := Marshal(nativeType, test.Value)
+-		if err != nil {
+-			t.Errorf("largeDateTest[%d]: %v", i, err)
+-			continue
+-		}
+-		if !bytes.Equal(data, test.Data) {
+-			t.Errorf("largeDateTest[%d]: expected %x (%v), got %x (%v) for time %s", i,
+-				test.Data, decInt(test.Data), data, decInt(data), test.Value)
+-		}
+-
+-		var date time.Time
+-		if err := Unmarshal(nativeType, data, &date); err != nil {
+-			t.Fatal(err)
+-		}
+-
+-		formattedDate := date.Format("2006-01-02")
+-		if test.ExpectedDate != formattedDate {
+-			t.Fatalf("largeDateTest: expected %v, got %v", test.ExpectedDate, formattedDate)
+-		}
+-	}
+-}
+-
+ func BenchmarkUnmarshalVarchar(b *testing.B) {
+ 	b.ReportAllocs()
+ 	src := make([]byte, 1024)
+@@ -2334,57 +1158,12 @@ func BenchmarkUnmarshalVarchar(b *testing.B) {
+
+ 	b.ResetTimer()
+ 	for i := 0; i < b.N; i++ {
+-		if err := unmarshalVarchar(NativeType{}, src, &dst); err != nil {
++		if err := unmarshalVarchar(src, &dst); err != nil {
+ 			b.Fatal(err)
+ 		}
+ 	}
+ }
+
+-func TestMarshalDuration(t *testing.T) {
+-	durationS := "1h10m10s"
+-	duration, _ := time.ParseDuration(durationS)
+-	expectedData := append([]byte{0, 0}, encVint(duration.Nanoseconds())...)
+-	var marshalDurationTests = []struct {
+-		Info  TypeInfo
+-		Data  []byte
+-		Value interface{}
+-	}{
+-		{
+-			NativeType{proto: 5, typ: TypeDuration},
+-			expectedData,
+-			duration.Nanoseconds(),
+-		},
+-		{
+-			NativeType{proto: 5, typ: TypeDuration},
+-			expectedData,
+-			duration,
+-		},
+-		{
+-			NativeType{proto: 5, typ: TypeDuration},
+-			expectedData,
+-			durationS,
+-		},
+-		{
+-			NativeType{proto: 5, typ: TypeDuration},
+-			expectedData,
+-			&duration,
+-		},
+-	}
+-
+-	for i, test := range marshalDurationTests {
+-		t.Log(i, test)
+-		data, err := Marshal(test.Info, test.Value)
+-		if err != nil {
+-			t.Errorf("marshalTest[%d]: %v", i, err)
+-			continue
+-		}
+-		if !bytes.Equal(data, test.Data) {
+-			t.Errorf("marshalTest[%d]: expected %x (%v), got %x (%v) for time %s", i,
+-				test.Data, decInt(test.Data), data, decInt(data), test.Value)
+-		}
+-	}
+-}
+-
+ func TestReadCollectionSize(t *testing.T) {
+ 	listV2 := CollectionType{
+ 		NativeType: NativeType{proto: 2, typ: TypeList},
+@@ -2474,11 +1253,10 @@ func BenchmarkUnmarshalUUID(b *testing.B) {
+ 	b.ReportAllocs()
+ 	src := make([]byte, 16)
+ 	dst := UUID{}
+-	var ti TypeInfo = NativeType{}
+
+ 	b.ResetTimer()
+ 	for i := 0; i < b.N; i++ {
+-		if err := unmarshalUUID(ti, src, &dst); err != nil {
++		if err := unmarshalUUID(src, &dst); err != nil {
+ 			b.Fatal(err)
+ 		}
+ 	}
+@@ -2505,7 +1283,7 @@ func TestUnmarshalUDT(t *testing.T) {
+ 		bytesWithLength([]byte("\x00\x2a")), // second
+ 	)
+ 	value := map[string]interface{}{}
+-	expectedErr := UnmarshalError("can not unmarshal into non-pointer map[string]interface {}")
++	expectedErr := unmarshalErrorf("can not unmarshal into non-pointer map[string]interface {}")
+
+ 	if err := Unmarshal(info, data, value); err != expectedErr {
+ 		t.Errorf("(%v=>%T): %#v returned error %#v, want %#v.",
+diff --git a/metadata_scylla_test.go b/metadata_scylla_test.go
+index 2accc31..38e4dda 100644
+--- a/metadata_scylla_test.go
++++ b/metadata_scylla_test.go
+@@ -1,4 +1,5 @@
+-// +build !cassandra
++//go:build unit
++// +build unit
+
+ // Copyright (c) 2015 The gocql Authors. All rights reserved.
+ // Use of this source code is governed by a BSD-style
+@@ -112,7 +113,7 @@ func TestCompileMetadata(t *testing.T) {
+ 			ViewName:     "sec_idx_index",
+ 		},
+ 	}
+-	compileMetadata(keyspace, tables, columns, nil, nil, nil, indexes, views)
++	compileMetadata(keyspace, tables, columns, nil, nil, nil, indexes, views, nil)
+ 	assertKeyspaceMetadata(
+ 		t,
+ 		keyspace,
+diff --git a/policies_test.go b/policies_test.go
+index 0b04205..c2094a8 100644
+--- a/policies_test.go
++++ b/policies_test.go
+@@ -2,6 +2,33 @@
+ // Use of this source code is governed by a BSD-style
+ // license that can be found in the LICENSE file.
+
++//go:build unit
++// +build unit
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql
+
+ import (
+@@ -44,6 +71,32 @@ func TestRoundRobbin(t *testing.T) {
+ 	}
+ }
+
++func TestRoundRobbinSameConnectAddress(t *testing.T) {
++	policy := RoundRobinHostPolicy()
++
++	hosts := [...]*HostInfo{
++		{hostId: "0", connectAddress: net.IPv4(0, 0, 0, 1), port: 9042},
++		{hostId: "1", connectAddress: net.IPv4(0, 0, 0, 1), port: 9043},
++	}
++
++	for _, host := range hosts {
++		policy.AddHost(host)
++	}
++
++	got := make(map[string]bool)
++	it := policy.Pick(nil)
++	for h := it(); h != nil; h = it() {
++		id := h.Info().hostId
++		if got[id] {
++			t.Fatalf("got duplicate host: %v", id)
++		}
++		got[id] = true
++	}
++	if len(got) != len(hosts) {
++		t.Fatalf("expected %d hosts got %d", len(hosts), len(got))
++	}
++}
++
+ // Tests of the token-aware host selection policy implementation with a
+ // round-robin host selection policy fallback.
+ func TestHostPolicy_TokenAware_SimpleStrategy(t *testing.T) {
+@@ -132,7 +185,7 @@ func TestHostPolicy_TokenAware_LWT_DisablesHostShuffling(t *testing.T) {
+ 			{hostId: "3", connectAddress: net.IPv4(10, 0, 0, 4), tokens: []string{"25", "35", "45"}},
+ 			{hostId: "4", connectAddress: net.IPv4(10, 0, 0, 3), tokens: []string{"50", "60", "70"}},
+ 			{hostId: "5", connectAddress: net.IPv4(10, 0, 0, 4), tokens: []string{"50", "60", "70"}},
+-		}, routingKey: "8", lwt: true, shuffle: true, want: []string{"0", "2", "3", "1"}},
++		}, routingKey: "8", lwt: true, shuffle: true, want: []string{"0", "2", "3", "4", "5", "1"}},
+ 		"token 08 shuffling not configured": {hosts: []*HostInfo{
+ 			{hostId: "0", connectAddress: net.IPv4(10, 0, 0, 1), tokens: []string{"00", "10", "20"}},
+ 			{hostId: "1", connectAddress: net.IPv4(10, 0, 0, 3), tokens: []string{"25", "35", "45"}},
+@@ -140,7 +193,7 @@ func TestHostPolicy_TokenAware_LWT_DisablesHostShuffling(t *testing.T) {
+ 			{hostId: "3", connectAddress: net.IPv4(10, 0, 0, 4), tokens: []string{"25", "35", "45"}},
+ 			{hostId: "4", connectAddress: net.IPv4(10, 0, 0, 3), tokens: []string{"50", "60", "70"}},
+ 			{hostId: "5", connectAddress: net.IPv4(10, 0, 0, 4), tokens: []string{"50", "60", "70"}},
+-		}, routingKey: "8", lwt: true, shuffle: false, want: []string{"0", "2", "3", "1"}},
++		}, routingKey: "8", lwt: true, shuffle: false, want: []string{"0", "2", "3", "4", "5", "1"}},
+ 		"token 30 shuffling configured": {hosts: []*HostInfo{
+ 			{hostId: "0", connectAddress: net.IPv4(10, 0, 0, 1), tokens: []string{"00", "10", "20"}},
+ 			{hostId: "1", connectAddress: net.IPv4(10, 0, 0, 3), tokens: []string{"25", "35", "45"}},
+@@ -148,7 +201,7 @@ func TestHostPolicy_TokenAware_LWT_DisablesHostShuffling(t *testing.T) {
+ 			{hostId: "3", connectAddress: net.IPv4(10, 0, 0, 4), tokens: []string{"25", "35", "45"}},
+ 			{hostId: "4", connectAddress: net.IPv4(10, 0, 0, 3), tokens: []string{"50", "60", "70"}},
+ 			{hostId: "5", connectAddress: net.IPv4(10, 0, 0, 4), tokens: []string{"50", "60", "70"}},
+-		}, routingKey: "30", lwt: true, shuffle: true, want: []string{"1", "3", "2", "0"}},
++		}, routingKey: "30", lwt: true, shuffle: true, want: []string{"1", "3", "2", "4", "5", "0"}},
+ 		"token 30 shuffling not configured": {hosts: []*HostInfo{
+ 			{hostId: "0", connectAddress: net.IPv4(10, 0, 0, 1), tokens: []string{"00", "10", "20"}},
+ 			{hostId: "1", connectAddress: net.IPv4(10, 0, 0, 3), tokens: []string{"25", "35", "45"}},
+@@ -156,7 +209,7 @@ func TestHostPolicy_TokenAware_LWT_DisablesHostShuffling(t *testing.T) {
+ 			{hostId: "3", connectAddress: net.IPv4(10, 0, 0, 4), tokens: []string{"25", "35", "45"}},
+ 			{hostId: "4", connectAddress: net.IPv4(10, 0, 0, 3), tokens: []string{"50", "60", "70"}},
+ 			{hostId: "5", connectAddress: net.IPv4(10, 0, 0, 4), tokens: []string{"50", "60", "70"}},
+-		}, routingKey: "30", lwt: true, shuffle: false, want: []string{"1", "3", "2", "0"}},
++		}, routingKey: "30", lwt: true, shuffle: false, want: []string{"1", "3", "2", "4", "5", "0"}},
+ 		"token 55 shuffling configured": {hosts: []*HostInfo{
+ 			{hostId: "0", connectAddress: net.IPv4(10, 0, 0, 1), tokens: []string{"00", "10", "20"}},
+ 			{hostId: "1", connectAddress: net.IPv4(10, 0, 0, 3), tokens: []string{"25", "35", "45"}},
+@@ -164,7 +217,7 @@ func TestHostPolicy_TokenAware_LWT_DisablesHostShuffling(t *testing.T) {
+ 			{hostId: "3", connectAddress: net.IPv4(10, 0, 0, 4), tokens: []string{"25", "35", "45"}},
+ 			{hostId: "4", connectAddress: net.IPv4(10, 0, 0, 3), tokens: []string{"50", "60", "70"}},
+ 			{hostId: "5", connectAddress: net.IPv4(10, 0, 0, 4), tokens: []string{"50", "60", "70"}},
+-		}, routingKey: "55", lwt: true, shuffle: true, want: []string{"0", "2", "3", "1"}},
++		}, routingKey: "55", lwt: true, shuffle: true, want: []string{"4", "5", "2", "3", "0", "1"}},
+ 		"token 55 shuffling not configured": {hosts: []*HostInfo{
+ 			{hostId: "0", connectAddress: net.IPv4(10, 0, 0, 1), tokens: []string{"00", "10", "20"}},
+ 			{hostId: "1", connectAddress: net.IPv4(10, 0, 0, 3), tokens: []string{"25", "35", "45"}},
+@@ -172,7 +225,7 @@ func TestHostPolicy_TokenAware_LWT_DisablesHostShuffling(t *testing.T) {
+ 			{hostId: "3", connectAddress: net.IPv4(10, 0, 0, 4), tokens: []string{"25", "35", "45"}},
+ 			{hostId: "4", connectAddress: net.IPv4(10, 0, 0, 3), tokens: []string{"50", "60", "70"}},
+ 			{hostId: "5", connectAddress: net.IPv4(10, 0, 0, 4), tokens: []string{"50", "60", "70"}},
+-		}, routingKey: "55", lwt: true, shuffle: false, want: []string{"0", "2", "3", "1"}},
++		}, routingKey: "55", lwt: true, shuffle: false, want: []string{"4", "5", "2", "3", "0", "1"}},
+ 	}
+ 	const keyspace = "myKeyspace"
+ 	for name, tc := range tests {
+@@ -396,6 +449,14 @@ func TestSimpleRetryPolicy(t *testing.T) {
+ 	}
+ }
+
++func TestLWTSimpleRetryPolicy(t *testing.T) {
++	ebrp := &SimpleRetryPolicy{NumRetries: 2}
++	// Verify that SimpleRetryPolicy implements both interfaces
++	var _ RetryPolicy = ebrp
++	var lwt_rt LWTRetryPolicy = ebrp
++	assertEqual(t, "retry type of LWT policy", lwt_rt.GetRetryTypeLWT(nil), Retry)
++}
++
+ func TestExponentialBackoffPolicy(t *testing.T) {
+ 	// test with defaults
+ 	sut := &ExponentialBackoffRetryPolicy{NumRetries: 2}
+@@ -424,6 +485,14 @@ func TestExponentialBackoffPolicy(t *testing.T) {
+ 	}
+ }
+
++func TestLWTExponentialBackoffPolicy(t *testing.T) {
++	ebrp := &ExponentialBackoffRetryPolicy{NumRetries: 2}
++	// Verify that ExponentialBackoffRetryPolicy implements both interfaces
++	var _ RetryPolicy = ebrp
++	var lwt_rt LWTRetryPolicy = ebrp
++	assertEqual(t, "retry type of LWT policy", lwt_rt.GetRetryTypeLWT(nil), Retry)
++}
++
+ func TestDowngradingConsistencyRetryPolicy(t *testing.T) {
+
+ 	q := &Query{cons: LocalQuorum, routingInfo: &queryRoutingInfo{}}
+@@ -575,6 +644,46 @@ func TestHostPolicy_DCAwareRR(t *testing.T) {
+
+ }
+
++func TestHostPolicy_DCAwareRR_disableDCFailover(t *testing.T) {
++	p := DCAwareRoundRobinPolicy("local", HostPolicyOptionDisableDCFailover)
++
++	hosts := [...]*HostInfo{
++		{hostId: "0", connectAddress: net.ParseIP("10.0.0.1"), dataCenter: "local"},
++		{hostId: "1", connectAddress: net.ParseIP("10.0.0.2"), dataCenter: "local"},
++		{hostId: "2", connectAddress: net.ParseIP("10.0.0.3"), dataCenter: "remote"},
++		{hostId: "3", connectAddress: net.ParseIP("10.0.0.4"), dataCenter: "remote"},
++	}
++
++	for _, host := range hosts {
++		p.AddHost(host)
++	}
++
++	got := make(map[string]bool, len(hosts))
++	var dcs []string
++
++	it := p.Pick(nil)
++	for h := it(); h != nil; h = it() {
++		id := h.Info().hostId
++		dc := h.Info().dataCenter
++
++		if got[id] {
++			t.Fatalf("got duplicate host %s", id)
++		}
++		got[id] = true
++		dcs = append(dcs, dc)
++	}
++
++	if len(got) != 2 {
++		t.Fatalf("expected %d hosts got %d", 2, len(got))
++	}
++
++	for _, dc := range dcs {
++		if dc == "remote" {
++			t.Fatalf("got remote dc but failover was diabled")
++		}
++	}
++}
++
+ // Tests of the token-aware host selection policy implementation with a
+ // DC aware round-robin host selection policy fallback
+ // with {"class": "NetworkTopologyStrategy", "a": 1, "b": 1, "c": 1} replication.
+@@ -1009,3 +1118,101 @@ func TestHostPolicy_TokenAware_Issue1274(t *testing.T) {
+ 	time.Sleep(100 * time.Millisecond)
+ 	close(cancel)
+ }
++
++func TestTokenAwarePolicyReset(t *testing.T) {
++	policy := TokenAwareHostPolicy(
++		RackAwareRoundRobinPolicy("local", "b"),
++		NonLocalReplicasFallback(),
++	)
++	policyInternal := policy.(*tokenAwareHostPolicy)
++
++	if policyInternal.fallback == nil {
++		t.Fatal("fallback is nil")
++	}
++	if !policyInternal.nonLocalReplicasFallback {
++		t.Fatal("nonLocalReplicasFallback is false")
++	}
++
++	policy.Init(&Session{logger: &defaultLogger{}})
++	if policyInternal.getKeyspaceMetadata == nil {
++		t.Fatal("keyspace metatadata fn is nil")
++	}
++	if policyInternal.getKeyspaceName == nil {
++		t.Fatal("keyspace name fn is nil")
++	}
++	if policyInternal.logger == nil {
++		t.Fatal("logger is nil")
++	}
++
++	// Reset - should reset fields that were set in Init
++	policy.Reset()
++
++	if policyInternal.fallback == nil { // we don't touch fallback
++		t.Fatal("fallback is nil")
++	}
++	if !policyInternal.nonLocalReplicasFallback { // we don't touch nonLocalReplicasFallback
++		t.Fatal("nonLocalReplicasFallback is false")
++	}
++	if policyInternal.getKeyspaceMetadata != nil {
++		t.Fatal("keyspace metatadata fn is not nil")
++	}
++	if policyInternal.getKeyspaceName != nil {
++		t.Fatal("keyspace name fn is not nil")
++	}
++	if policyInternal.logger != nil {
++		t.Fatal("logger is nil")
++	}
++}
++
++func TestTokenAwarePolicyResetInSessionClose(t *testing.T) {
++	policy := TokenAwareHostPolicy(
++		RackAwareRoundRobinPolicy("local", "b"),
++		NonLocalReplicasFallback(),
++	)
++	policyInternal := policy.(*tokenAwareHostPolicy)
++
++	if policyInternal.fallback == nil {
++		t.Fatal("fallback is nil")
++	}
++	if !policyInternal.nonLocalReplicasFallback {
++		t.Fatal("nonLocalReplicasFallback is false")
++	}
++
++	// emulate session initialization
++	session := &Session{
++		logger: &defaultLogger{},
++		policy: policy,
++	}
++	policy.Init(session)
++	// check that we are realy initialize policy
++	if policyInternal.getKeyspaceMetadata == nil {
++		t.Fatal("keyspace metatadata fn is nil")
++	}
++	if policyInternal.getKeyspaceName == nil {
++		t.Fatal("keyspace name fn is nil")
++	}
++	if policyInternal.logger == nil {
++		t.Fatal("logger is nil")
++	}
++
++	// session.Close should call policy.Reset method
++	session.Close()
++
++	// check that session.Close has called policy.Reset method
++
++	if policyInternal.fallback == nil { // we don't touch fallback in Reset
++		t.Fatal("fallback is nil")
++	}
++	if !policyInternal.nonLocalReplicasFallback { // we don't touch nonLocalReplicasFallback in Reset
++		t.Fatal("nonLocalReplicasFallback is false")
++	}
++	if policyInternal.getKeyspaceMetadata != nil {
++		t.Fatal("keyspace metatadata fn is not nil")
++	}
++	if policyInternal.getKeyspaceName != nil {
++		t.Fatal("keyspace name fn is not nil")
++	}
++	if policyInternal.logger != nil {
++		t.Fatal("logger is nil")
++	}
++}
+diff --git a/stress_test.go b/stress_test.go
+index 71e33d5..4d08b14 100644
+--- a/stress_test.go
++++ b/stress_test.go
+@@ -1,5 +1,29 @@
+-//go:build all || cassandra
+-// +build all cassandra
++//go:build integration
++// +build integration
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+diff --git a/tablet_test.go b/tablet_test.go
+index f6afda8..ffe7650 100644
+--- a/tablet_test.go
++++ b/tablet_test.go
+@@ -1,16 +1,14 @@
+-//go:build all || unit
+-// +build all unit
++//go:build unit
++// +build unit
+
+ package gocql
+
+ import (
+-	"sync"
+ 	"testing"
+ )
+
+-var tablets = []*TabletInfo{
++var tablets = TabletInfoList{
+ 	{
+-		sync.RWMutex{},
+ 		"test1",
+ 		"table1",
+ 		-7917529027641081857,
+@@ -18,7 +16,6 @@ var tablets = []*TabletInfo{
+ 		[]ReplicaInfo{{TimeUUID(), 9}},
+ 	},
+ 	{
+-		sync.RWMutex{},
+ 		"test1",
+ 		"table1",
+ 		-6917529027641081857,
+@@ -26,7 +23,6 @@ var tablets = []*TabletInfo{
+ 		[]ReplicaInfo{{TimeUUID(), 8}},
+ 	},
+ 	{
+-		sync.RWMutex{},
+ 		"test1",
+ 		"table1",
+ 		-4611686018427387905,
+@@ -34,7 +30,6 @@ var tablets = []*TabletInfo{
+ 		[]ReplicaInfo{{TimeUUID(), 9}},
+ 	},
+ 	{
+-		sync.RWMutex{},
+ 		"test1",
+ 		"table1",
+ 		-2305843009213693953,
+@@ -42,7 +37,6 @@ var tablets = []*TabletInfo{
+ 		[]ReplicaInfo{{TimeUUID(), 8}},
+ 	},
+ 	{
+-		sync.RWMutex{},
+ 		"test1",
+ 		"table1",
+ 		-1,
+@@ -50,7 +44,6 @@ var tablets = []*TabletInfo{
+ 		[]ReplicaInfo{{TimeUUID(), 3}},
+ 	},
+ 	{
+-		sync.RWMutex{},
+ 		"test1",
+ 		"table1",
+ 		2305843009213693951,
+@@ -58,7 +51,6 @@ var tablets = []*TabletInfo{
+ 		[]ReplicaInfo{{TimeUUID(), 3}},
+ 	},
+ 	{
+-		sync.RWMutex{},
+ 		"test1",
+ 		"table1",
+ 		4611686018427387903,
+@@ -66,7 +58,6 @@ var tablets = []*TabletInfo{
+ 		[]ReplicaInfo{{TimeUUID(), 7}},
+ 	},
+ 	{
+-		sync.RWMutex{},
+ 		"test1",
+ 		"table1",
+ 		6917529027641081855,
+@@ -74,7 +65,6 @@ var tablets = []*TabletInfo{
+ 		[]ReplicaInfo{{TimeUUID(), 7}},
+ 	},
+ 	{
+-		sync.RWMutex{},
+ 		"test2",
+ 		"table1",
+ 		-7917529027641081857,
+@@ -82,7 +72,6 @@ var tablets = []*TabletInfo{
+ 		[]ReplicaInfo{{TimeUUID(), 9}},
+ 	},
+ 	{
+-		sync.RWMutex{},
+ 		"test2",
+ 		"table1",
+ 		-6917529027641081857,
+@@ -90,7 +79,6 @@ var tablets = []*TabletInfo{
+ 		[]ReplicaInfo{{TimeUUID(), 8}},
+ 	},
+ 	{
+-		sync.RWMutex{},
+ 		"test2",
+ 		"table1",
+ 		-4611686018427387905,
+@@ -98,7 +86,6 @@ var tablets = []*TabletInfo{
+ 		[]ReplicaInfo{{TimeUUID(), 9}},
+ 	},
+ 	{
+-		sync.RWMutex{},
+ 		"test2",
+ 		"table1",
+ 		-2305843009213693953,
+@@ -106,7 +93,6 @@ var tablets = []*TabletInfo{
+ 		[]ReplicaInfo{{TimeUUID(), 8}},
+ 	},
+ 	{
+-		sync.RWMutex{},
+ 		"test2",
+ 		"table1",
+ 		-1,
+@@ -114,7 +100,6 @@ var tablets = []*TabletInfo{
+ 		[]ReplicaInfo{{TimeUUID(), 3}},
+ 	},
+ 	{
+-		sync.RWMutex{},
+ 		"test2",
+ 		"table1",
+ 		2305843009213693951,
+@@ -122,7 +107,6 @@ var tablets = []*TabletInfo{
+ 		[]ReplicaInfo{{TimeUUID(), 3}},
+ 	},
+ 	{
+-		sync.RWMutex{},
+ 		"test2",
+ 		"table1",
+ 		4611686018427387903,
+@@ -130,7 +114,6 @@ var tablets = []*TabletInfo{
+ 		[]ReplicaInfo{{TimeUUID(), 7}},
+ 	},
+ 	{
+-		sync.RWMutex{},
+ 		"test2",
+ 		"table1",
+ 		6917529027641081855,
+@@ -140,31 +123,31 @@ var tablets = []*TabletInfo{
+ }
+
+ func TestFindTablets(t *testing.T) {
+-	id, id2 := findTablets(tablets, "test1", "table1")
++	id, id2 := tablets.findTablets("test1", "table1")
+ 	assertEqual(t, "id", 0, id)
+ 	assertEqual(t, "id2", 7, id2)
+
+-	id, id2 = findTablets(tablets, "test2", "table1")
++	id, id2 = tablets.findTablets("test2", "table1")
+ 	assertEqual(t, "id", 8, id)
+ 	assertEqual(t, "id2", 15, id2)
+
+-	id, id2 = findTablets(tablets, "test3", "table1")
++	id, id2 = tablets.findTablets("test3", "table1")
+ 	assertEqual(t, "id", -1, id)
+ 	assertEqual(t, "id2", -1, id2)
+ }
+
+ func TestFindTabletForToken(t *testing.T) {
+-	tablet := findTabletForToken(tablets, parseInt64Token("0"), 0, 7)
++	tablet := tablets.findTabletForToken(parseInt64Token("0"), 0, 7)
+ 	assertTrue(t, "tablet.lastToken == 2305843009213693951", tablet.lastToken == 2305843009213693951)
+
+-	tablet = findTabletForToken(tablets, parseInt64Token("9223372036854775807"), 0, 7)
++	tablet = tablets.findTabletForToken(parseInt64Token("9223372036854775807"), 0, 7)
+ 	assertTrue(t, "tablet.lastToken == 9223372036854775807", tablet.lastToken == 9223372036854775807)
+
+-	tablet = findTabletForToken(tablets, parseInt64Token("-4611686018427387904"), 0, 7)
++	tablet = tablets.findTabletForToken(parseInt64Token("-4611686018427387904"), 0, 7)
+ 	assertTrue(t, "tablet.lastToken == -2305843009213693953", tablet.lastToken == -2305843009213693953)
+ }
+
+-func CompareRanges(tablets []*TabletInfo, ranges [][]int64) bool {
++func CompareRanges(tablets TabletInfoList, ranges [][]int64) bool {
+ 	if len(tablets) != len(ranges) {
+ 		return false
+ 	}
+@@ -177,10 +160,9 @@ func CompareRanges(tablets []*TabletInfo, ranges [][]int64) bool {
+ 	return true
+ }
+ func TestAddTabletToEmptyTablets(t *testing.T) {
+-	tablets := []*TabletInfo{}
++	tablets := TabletInfoList{}
+
+-	tablets = addTabletToTabletsList(tablets, &TabletInfo{
+-		sync.RWMutex{},
++	tablets = tablets.addTabletToTabletsList(&TabletInfo{
+ 		"test_ks",
+ 		"test_tb",
+ 		-6917529027641081857,
+@@ -192,8 +174,7 @@ func TestAddTabletToEmptyTablets(t *testing.T) {
+ }
+
+ func TestAddTabletAtTheBeggining(t *testing.T) {
+-	tablets := []*TabletInfo{{
+-		sync.RWMutex{},
++	tablets := TabletInfoList{{
+ 		"test_ks",
+ 		"test_tb",
+ 		-6917529027641081857,
+@@ -201,8 +182,7 @@ func TestAddTabletAtTheBeggining(t *testing.T) {
+ 		[]ReplicaInfo{},
+ 	}}
+
+-	tablets = addTabletToTabletsList(tablets, &TabletInfo{
+-		sync.RWMutex{},
++	tablets = tablets.addTabletToTabletsList(&TabletInfo{
+ 		"test_ks",
+ 		"test_tb",
+ 		-8611686018427387905,
+@@ -215,8 +195,7 @@ func TestAddTabletAtTheBeggining(t *testing.T) {
+ }
+
+ func TestAddTabletAtTheEnd(t *testing.T) {
+-	tablets := []*TabletInfo{{
+-		sync.RWMutex{},
++	tablets := TabletInfoList{{
+ 		"test_ks",
+ 		"test_tb",
+ 		-6917529027641081857,
+@@ -224,8 +203,7 @@ func TestAddTabletAtTheEnd(t *testing.T) {
+ 		[]ReplicaInfo{},
+ 	}}
+
+-	tablets = addTabletToTabletsList(tablets, &TabletInfo{
+-		sync.RWMutex{},
++	tablets = tablets.addTabletToTabletsList(&TabletInfo{
+ 		"test_ks",
+ 		"test_tb",
+ 		-1,
+@@ -238,15 +216,13 @@ func TestAddTabletAtTheEnd(t *testing.T) {
+ }
+
+ func TestAddTabletInTheMiddle(t *testing.T) {
+-	tablets := []*TabletInfo{{
+-		sync.RWMutex{},
++	tablets := TabletInfoList{{
+ 		"test_ks",
+ 		"test_tb",
+ 		-6917529027641081857,
+ 		-4611686018427387905,
+ 		[]ReplicaInfo{},
+ 	}, {
+-		sync.RWMutex{},
+ 		"test_ks",
+ 		"test_tb",
+ 		-1,
+@@ -254,8 +230,7 @@ func TestAddTabletInTheMiddle(t *testing.T) {
+ 		[]ReplicaInfo{},
+ 	}}
+
+-	tablets = addTabletToTabletsList(tablets, &TabletInfo{
+-		sync.RWMutex{},
++	tablets = tablets.addTabletToTabletsList(&TabletInfo{
+ 		"test_ks",
+ 		"test_tb",
+ 		-4611686018427387905,
+@@ -269,29 +244,25 @@ func TestAddTabletInTheMiddle(t *testing.T) {
+ }
+
+ func TestAddTabletIntersecting(t *testing.T) {
+-	tablets := []*TabletInfo{{
+-		sync.RWMutex{},
++	tablets := TabletInfoList{{
+ 		"test_ks",
+ 		"test_tb",
+ 		-6917529027641081857,
+ 		-4611686018427387905,
+ 		[]ReplicaInfo{},
+ 	}, {
+-		sync.RWMutex{},
+ 		"test_ks",
+ 		"test_tb",
+ 		-4611686018427387905,
+ 		-2305843009213693953,
+ 		[]ReplicaInfo{},
+ 	}, {
+-		sync.RWMutex{},
+ 		"test_ks",
+ 		"test_tb",
+ 		-2305843009213693953,
+ 		-1,
+ 		[]ReplicaInfo{},
+ 	}, {
+-		sync.RWMutex{},
+ 		"test_ks",
+ 		"test_tb",
+ 		-1,
+@@ -299,8 +270,7 @@ func TestAddTabletIntersecting(t *testing.T) {
+ 		[]ReplicaInfo{},
+ 	}}
+
+-	tablets = addTabletToTabletsList(tablets, &TabletInfo{
+-		sync.RWMutex{},
++	tablets = tablets.addTabletToTabletsList(&TabletInfo{
+ 		"test_ks",
+ 		"test_tb",
+ 		-3611686018427387905,
+@@ -315,15 +285,13 @@ func TestAddTabletIntersecting(t *testing.T) {
+ }
+
+ func TestAddTabletIntersectingWithFirst(t *testing.T) {
+-	tablets := []*TabletInfo{{
+-		sync.RWMutex{},
++	tablets := TabletInfoList{{
+ 		"test_ks",
+ 		"test_tb",
+ 		-8611686018427387905,
+ 		-7917529027641081857,
+ 		[]ReplicaInfo{},
+ 	}, {
+-		sync.RWMutex{},
+ 		"test_ks",
+ 		"test_tb",
+ 		-6917529027641081857,
+@@ -331,8 +299,7 @@ func TestAddTabletIntersectingWithFirst(t *testing.T) {
+ 		[]ReplicaInfo{},
+ 	}}
+
+-	tablets = addTabletToTabletsList(tablets, &TabletInfo{
+-		sync.RWMutex{},
++	tablets = tablets.addTabletToTabletsList(&TabletInfo{
+ 		"test_ks",
+ 		"test_tb",
+ 		-8011686018427387905,
+@@ -345,15 +312,13 @@ func TestAddTabletIntersectingWithFirst(t *testing.T) {
+ }
+
+ func TestAddTabletIntersectingWithLast(t *testing.T) {
+-	tablets := []*TabletInfo{{
+-		sync.RWMutex{},
++	tablets := TabletInfoList{{
+ 		"test_ks",
+ 		"test_tb",
+ 		-8611686018427387905,
+ 		-7917529027641081857,
+ 		[]ReplicaInfo{},
+ 	}, {
+-		sync.RWMutex{},
+ 		"test_ks",
+ 		"test_tb",
+ 		-6917529027641081857,
+@@ -361,8 +326,7 @@ func TestAddTabletIntersectingWithLast(t *testing.T) {
+ 		[]ReplicaInfo{},
+ 	}}
+
+-	tablets = addTabletToTabletsList(tablets, &TabletInfo{
+-		sync.RWMutex{},
++	tablets = tablets.addTabletToTabletsList(&TabletInfo{
+ 		"test_ks",
+ 		"test_tb",
+ 		-5011686018427387905,
+@@ -373,3 +337,85 @@ func TestAddTabletIntersectingWithLast(t *testing.T) {
+ 	assertTrue(t, "Token range in tablets table not correct", CompareRanges(tablets, [][]int64{{-8611686018427387905, -7917529027641081857},
+ 		{-5011686018427387905, -2987529027641081857}}))
+ }
++
++func TestRemoveTabletsWithHost(t *testing.T) {
++	removed_host_id := TimeUUID()
++
++	tablets := TabletInfoList{{
++		"test_ks",
++		"test_tb",
++		-8611686018427387905,
++		-7917529027641081857,
++		[]ReplicaInfo{{TimeUUID(), 9}, {TimeUUID(), 8}, {TimeUUID(), 3}},
++	}, {
++		"test_ks",
++		"test_tb",
++		-6917529027641081857,
++		-4611686018427387905,
++		[]ReplicaInfo{{removed_host_id, 9}, {TimeUUID(), 8}, {TimeUUID(), 3}},
++	}, {
++		"test_ks",
++		"test_tb",
++		-4611686018427387905,
++		-2305843009213693953,
++		[]ReplicaInfo{{TimeUUID(), 9}, {removed_host_id, 8}, {TimeUUID(), 3}},
++	}}
++
++	tablets = tablets.removeTabletsWithHostFromTabletsList(&HostInfo{
++		hostId: removed_host_id.String(),
++	})
++
++	assertEqual(t, "TabletsList length", 1, len(tablets))
++}
++
++func TestRemoveTabletsWithKeyspace(t *testing.T) {
++	tablets := TabletInfoList{{
++		"removed_ks",
++		"test_tb",
++		-8611686018427387905,
++		-7917529027641081857,
++		[]ReplicaInfo{{TimeUUID(), 9}, {TimeUUID(), 8}, {TimeUUID(), 3}},
++	}, {
++		"removed_ks",
++		"test_tb",
++		-6917529027641081857,
++		-4611686018427387905,
++		[]ReplicaInfo{{TimeUUID(), 9}, {TimeUUID(), 8}, {TimeUUID(), 3}},
++	}, {
++		"test_ks",
++		"test_tb",
++		-4611686018427387905,
++		-2305843009213693953,
++		[]ReplicaInfo{{TimeUUID(), 9}, {TimeUUID(), 8}, {TimeUUID(), 3}},
++	}}
++
++	tablets = tablets.removeTabletsWithKeyspaceFromTabletsList("removed_ks")
++
++	assertEqual(t, "TabletsList length", 1, len(tablets))
++}
++
++func TestRemoveTabletsWithTable(t *testing.T) {
++	tablets := TabletInfoList{{
++		"test_ks",
++		"test_tb",
++		-8611686018427387905,
++		-7917529027641081857,
++		[]ReplicaInfo{{TimeUUID(), 9}, {TimeUUID(), 8}, {TimeUUID(), 3}},
++	}, {
++		"test_ks",
++		"test_tb",
++		-6917529027641081857,
++		-4611686018427387905,
++		[]ReplicaInfo{{TimeUUID(), 9}, {TimeUUID(), 8}, {TimeUUID(), 3}},
++	}, {
++		"test_ks",
++		"removed_tb",
++		-4611686018427387905,
++		-2305843009213693953,
++		[]ReplicaInfo{{TimeUUID(), 9}, {TimeUUID(), 8}, {TimeUUID(), 3}},
++	}}
++
++	tablets = tablets.removeTabletsWithTableFromTabletsList("test_ks", "removed_tb")
++
++	assertEqual(t, "TabletsList length", 2, len(tablets))
++}
+diff --git a/token_test.go b/token_test.go
+index bb75942..ce442bb 100644
+--- a/token_test.go
++++ b/token_test.go
+@@ -2,6 +2,33 @@
+ // Use of this source code is governed by a BSD-style
+ // license that can be found in the LICENSE file.
+
++//go:build unit
++// +build unit
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql
+
+ import (
+@@ -24,7 +51,7 @@ func TestMurmur3Partitioner(t *testing.T) {
+
+ 	// at least verify that the partitioner
+ 	// doesn't return nil
+-	pk, _ := marshalInt(nil, 1)
++	pk, _ := marshalInt(1)
+ 	token = murmur3Partitioner{}.Hash(pk)
+ 	if token == nil {
+ 		t.Fatal("token was nil")
+@@ -49,7 +76,7 @@ func TestOrderedPartitioner(t *testing.T) {
+ 	// at least verify that the partitioner
+ 	// doesn't return nil
+ 	p := orderedPartitioner{}
+-	pk, _ := marshalInt(nil, 1)
++	pk, _ := marshalInt(1)
+ 	token := p.Hash(pk)
+ 	if token == nil {
+ 		t.Fatal("token was nil")
+@@ -85,7 +112,7 @@ func TestRandomPartitioner(t *testing.T) {
+ 	// at least verify that the partitioner
+ 	// doesn't return nil
+ 	p := randomPartitioner{}
+-	pk, _ := marshalInt(nil, 1)
++	pk, _ := marshalInt(1)
+ 	token := p.Hash(pk)
+ 	if token == nil {
+ 		t.Fatal("token was nil")
+@@ -133,7 +160,7 @@ func TestRandomToken(t *testing.T) {
+ type intToken int
+
+ func (i intToken) String() string        { return strconv.Itoa(int(i)) }
+-func (i intToken) Less(token token) bool { return i < token.(intToken) }
++func (i intToken) Less(token Token) bool { return i < token.(intToken) }
+
+ // Test of the token ring implementation based on example at the start of this
+ // page of documentation:
+diff --git a/topology_test.go b/topology_test.go
+index 2551fd7..d7eb6a6 100644
+--- a/topology_test.go
++++ b/topology_test.go
+@@ -1,3 +1,30 @@
++//go:build unit
++// +build unit
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql
+
+ import (
+diff --git a/tuple_test.go b/tuple_test.go
+index 4101866..446cd7f 100644
+--- a/tuple_test.go
++++ b/tuple_test.go
+@@ -1,5 +1,29 @@
+-//go:build all || integration
+-// +build all integration
++//go:build integration
++// +build integration
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+diff --git a/udt_test.go b/udt_test.go
+index 0a3c361..5eab841 100644
+--- a/udt_test.go
++++ b/udt_test.go
+@@ -1,5 +1,29 @@
+-//go:build all || cassandra
+-// +build all cassandra
++//go:build integration
++// +build integration
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+diff --git a/uuid_test.go b/uuid_test.go
+index 65a6609..d4b5ada 100644
+--- a/uuid_test.go
++++ b/uuid_test.go
+@@ -1,5 +1,29 @@
+-//go:build all || unit
+-// +build all unit
++//go:build unit
++// +build unit
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+@@ -168,7 +192,7 @@ func TestTimeUUIDWith(t *testing.T) {
+ }
+
+ func TestParseUUID(t *testing.T) {
+-	uuid, _ := ParseUUID("486f3a88-775b-11e3-ae07-d231feb1dc81")
++	uuid := ParseUUIDMust("486f3a88-775b-11e3-ae07-d231feb1dc81")
+ 	if uuid.Time() != time.Date(2014, 1, 7, 5, 19, 29, 222516000, time.UTC) {
+ 		t.Errorf("Expected date of 1/7/2014 at 5:19:29.222516, got %v", uuid.Time())
+ 	}
+diff --git a/wiki_test.go b/wiki_test.go
+index dea2b4c..aee55ae 100644
+--- a/wiki_test.go
++++ b/wiki_test.go
+@@ -1,5 +1,29 @@
+-//go:build all || cassandra
+-// +build all cassandra
++//go:build integration
++// +build integration
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+diff --git a/scylla_test.go b/scylla_test.go
+index a00c06d..cc5e3a0 100644
+--- a/scylla_test.go
++++ b/scylla_test.go
+@@ -1,3 +1,6 @@
++//go:build unit
++// +build unit
++
+ package gocql
+
+ import (
+@@ -24,7 +27,7 @@ func TestScyllaConnPickerPickNilToken(t *testing.T) {
+ 		s.conns = []*Conn{{
+ 			streams: streams.New(protoVersion4),
+ 		}}
+-		if s.Pick(token(nil), "", "") != s.conns[0] {
++		if s.Pick(Token(nil), nil) != s.conns[0] {
+ 			t.Fatal("expected connection")
+ 		}
+ 	})
+@@ -33,7 +36,7 @@ func TestScyllaConnPickerPickNilToken(t *testing.T) {
+ 		s.conns = []*Conn{{
+ 			streams: streams.New(protoVersion4),
+ 		}}
+-		if s.Pick(token(nil), "", "") != s.conns[0] {
++		if s.Pick(Token(nil), nil) != s.conns[0] {
+ 			t.Fatal("expected connection")
+ 		}
+ 	})
+@@ -42,20 +45,20 @@ func TestScyllaConnPickerPickNilToken(t *testing.T) {
+ 		s.conns = []*Conn{nil, {
+ 			streams: streams.New(protoVersion4),
+ 		}}
+-		if s.Pick(token(nil), "", "") != s.conns[1] {
++		if s.Pick(Token(nil), nil) != s.conns[1] {
+ 			t.Fatal("expected connection")
+ 		}
+-		if s.Pick(token(nil), "", "") != s.conns[1] {
++		if s.Pick(Token(nil), nil) != s.conns[1] {
+ 			t.Fatal("expected connection")
+ 		}
+ 	})
+
+ 	t.Run("multiple shards no conns", func(t *testing.T) {
+ 		s.conns = []*Conn{nil, nil}
+-		if s.Pick(token(nil), "", "") != nil {
++		if s.Pick(Token(nil), nil) != nil {
+ 			t.Fatal("expected nil")
+ 		}
+-		if s.Pick(token(nil), "", "") != nil {
++		if s.Pick(Token(nil), nil) != nil {
+ 			t.Fatal("expected nil")
+ 		}
+ 	})
+@@ -64,7 +67,7 @@ func TestScyllaConnPickerPickNilToken(t *testing.T) {
+ func hammerConnPicker(t *testing.T, wg *sync.WaitGroup, s *scyllaConnPicker, loops int) {
+ 	t.Helper()
+ 	for i := 0; i < loops; i++ {
+-		if c := s.Pick(nil, "", ""); c == nil {
++		if c := s.Pick(nil, nil); c == nil {
+ 			t.Error("unexpected nil")
+ 		}
+ 	}
+@@ -163,7 +166,7 @@ func TestScyllaRandomConnPIcker(t *testing.T) {
+ 			conns:     []*Conn{nil, mockConn(1)},
+ 		}
+
+-		if s.Pick(token(nil), "", "") == nil {
++		if s.Pick(Token(nil), nil) == nil {
+ 			t.Fatal("expected connection")
+ 		}
+ 	})
+@@ -187,7 +190,7 @@ func TestScyllaRandomConnPIcker(t *testing.T) {
+ 				defer wg.Done()
+ 				for i := 0; i < 3; i++ {
+ 					select {
+-					case connCh <- s.Pick(token(nil), "", ""):
++					case connCh <- s.Pick(Token(nil), nil):
+ 					case <-ctx.Done():
+ 					}
+ 				}
+diff --git a/session_connect_test.go b/session_connect_test.go
+index 8f4265b..d2097b6 100644
+--- a/session_connect_test.go
++++ b/session_connect_test.go
+@@ -1,3 +1,27 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql
+
+ import (
+diff --git a/session_unit_test.go b/session_unit_test.go
+index c73677e..ef2a454 100644
+--- a/session_unit_test.go
++++ b/session_unit_test.go
+@@ -1,5 +1,29 @@
+-//go:build all || unit
+-// +build all unit
++//go:build unit
++// +build unit
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+diff --git a/scylla_shard_aware_port_integration_test.go b/scylla_shard_aware_port_integration_test.go
+index 422d750..b6aa1fc 100644
+--- a/scylla_shard_aware_port_integration_test.go
++++ b/scylla_shard_aware_port_integration_test.go
+@@ -1,5 +1,5 @@
++//go:build integration
+ // +build integration
+-// +build scylla
+
+ package gocql
+
+diff --git a/scylla_shard_aware_port_mocked_test.go b/scylla_shard_aware_port_mocked_test.go
+index 7c031ae..38c447f 100644
+--- a/scylla_shard_aware_port_mocked_test.go
++++ b/scylla_shard_aware_port_mocked_test.go
+@@ -1,3 +1,4 @@
++//go:build unit
+ // +build unit
+
+ package gocql
