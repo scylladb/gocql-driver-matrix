@@ -1,197 +1,3 @@
-diff --git a/cassandra_test.go b/cassandra_test.go
-index e074acc..7c5a508 100644
---- a/cassandra_test.go
-+++ b/cassandra_test.go
-@@ -497,14 +497,14 @@ func TestPagingWithBind(t *testing.T) {
- func TestCAS(t *testing.T) {
- 	cluster := createCluster()
- 	cluster.SerialConsistency = LocalSerial
--	session := createSessionFromCluster(cluster, t)
-+	session := createSessionFromClusterTabletsDisabled(cluster, t)
- 	defer session.Close()
-
- 	if session.cfg.ProtoVersion == 1 {
- 		t.Skip("lightweight transactions not supported. Please use Cassandra >= 2.0")
- 	}
-
--	if err := createTable(session, `CREATE TABLE gocql_test.cas_table (
-+	if err := createTable(session, `CREATE TABLE cas_table (
- 			title         varchar,
- 			revid   	  timeuuid,
- 			last_modified timestamp,
-@@ -669,14 +669,14 @@ func TestDurationType(t *testing.T) {
- }
-
- func TestMapScanCAS(t *testing.T) {
--	session := createSession(t)
-+	session := createSessionFromClusterTabletsDisabled(createCluster(), t)
- 	defer session.Close()
-
- 	if session.cfg.ProtoVersion == 1 {
- 		t.Skip("lightweight transactions not supported. Please use Cassandra >= 2.0")
- 	}
-
--	if err := createTable(session, `CREATE TABLE gocql_test.cas_table2 (
-+	if err := createTable(session, `CREATE TABLE cas_table2 (
- 			title         varchar,
- 			revid   	  timeuuid,
- 			last_modified timestamp,
-@@ -1240,14 +1240,14 @@ func TestScanWithNilArguments(t *testing.T) {
- }
-
- func TestScanCASWithNilArguments(t *testing.T) {
--	session := createSession(t)
-+	session := createSessionFromClusterTabletsDisabled(createCluster(), t)
- 	defer session.Close()
-
- 	if session.cfg.ProtoVersion == 1 {
- 		t.Skip("lightweight transactions not supported. Please use Cassandra >= 2.0")
- 	}
-
--	if err := createTable(session, `CREATE TABLE gocql_test.scan_cas_with_nil_arguments (
-+	if err := createTable(session, `CREATE TABLE scan_cas_with_nil_arguments (
- 		foo   varchar,
- 		bar   varchar,
- 		PRIMARY KEY (foo, bar)
-@@ -1709,7 +1709,7 @@ func TestPrepare_PreparedCacheKey(t *testing.T) {
-
- 	// create a second keyspace
- 	cluster2 := createCluster()
--	createKeyspace(t, cluster2, "gocql_test2")
-+	createKeyspace(t, cluster2, "gocql_test2", false)
- 	cluster2.Keyspace = "gocql_test2"
- 	session2, err := cluster2.CreateSession()
- 	if err != nil {
-diff --git a/cloud_cluster_test.go b/cloud_cluster_test.go
-index 4133ac5..0d92953 100644
---- a/cloud_cluster_test.go
-+++ b/cloud_cluster_test.go
-@@ -45,7 +45,7 @@ func TestCloudConnection(t *testing.T) {
-
- 	var localAddress string
- 	var localHostID gocql.UUID
--	scanner := session.Query("SELECT broadcast_address, host_id FROM system.local").Iter().Scanner()
-+	scanner := session.Query("SELECT broadcast_address, host_id FROM system.local WHERE key='local'").Iter().Scanner()
- 	if scanner.Next() {
- 		if err := scanner.Scan(&localAddress, &localHostID); err != nil {
- 			t.Fatal(err)
-diff --git a/common_test.go b/common_test.go
-index ad37bb2..d1d3412 100644
---- a/common_test.go
-+++ b/common_test.go
-@@ -56,7 +56,29 @@ func addSslOptions(cluster *ClusterConfig) *ClusterConfig {
- 	return cluster
- }
-
--var initOnce sync.Once
-+type OnceManager struct {
-+	mu        sync.Mutex
-+	keyspaces map[string]*sync.Once
-+}
-+
-+func NewOnceManager() *OnceManager {
-+	return &OnceManager{
-+		keyspaces: make(map[string]*sync.Once),
-+	}
-+}
-+
-+func (o *OnceManager) GetOnce(key string) *sync.Once {
-+	o.mu.Lock()
-+	defer o.mu.Unlock()
-+
-+	if once, exists := o.keyspaces[key]; exists {
-+		return once
-+	}
-+	o.keyspaces[key] = &sync.Once{}
-+	return o.keyspaces[key]
-+}
-+
-+var initKeyspaceOnce = NewOnceManager()
-
- func createTable(s *Session, table string) error {
- 	// lets just be really sure
-@@ -136,7 +158,7 @@ func createMultiNodeCluster(opts ...func(*ClusterConfig)) *ClusterConfig {
- 	return cluster
- }
-
--func createKeyspace(tb testing.TB, cluster *ClusterConfig, keyspace string) {
-+func createKeyspace(tb testing.TB, cluster *ClusterConfig, keyspace string, disableTablets bool) {
- 	// TODO: tb.Helper()
- 	c := *cluster
- 	c.Keyspace = "system"
-@@ -152,25 +174,42 @@ func createKeyspace(tb testing.TB, cluster *ClusterConfig, keyspace string) {
- 		panic(fmt.Sprintf("unable to drop keyspace: %v", err))
- 	}
-
--	err = createTable(session, fmt.Sprintf(`CREATE KEYSPACE %s
-+	query := fmt.Sprintf(`CREATE KEYSPACE %s
- 	WITH replication = {
- 		'class' : 'NetworkTopologyStrategy',
- 		'replication_factor' : %d
--	}`, keyspace, *flagRF))
-+	}`, keyspace, *flagRF)
-+
-+	if disableTablets {
-+		query += " AND tablets = {'enabled': false}"
-+	}
-+
-+	err = createTable(session, query)
-
- 	if err != nil {
- 		panic(fmt.Sprintf("unable to create keyspace: %v", err))
- 	}
- }
-
--func createSessionFromCluster(cluster *ClusterConfig, tb testing.TB) *Session {
-+type testKeyspaceOpts struct {
-+	tabletsDisabled bool
-+}
-+
-+func (o *testKeyspaceOpts) KeyspaceName() string {
-+	if o.tabletsDisabled {
-+		return "gocql_test_tablets_disabled"
-+	}
-+	return "gocql_test"
-+}
-+
-+func createSessionFromClusterHelper(cluster *ClusterConfig, tb testing.TB, opts testKeyspaceOpts) *Session {
- 	// Drop and re-create the keyspace once. Different tests should use their own
- 	// individual tables, but can assume that the table does not exist before.
--	initOnce.Do(func() {
--		createKeyspace(tb, cluster, "gocql_test")
-+	initKeyspaceOnce.GetOnce(opts.KeyspaceName()).Do(func() {
-+		createKeyspace(tb, cluster, opts.KeyspaceName(), opts.tabletsDisabled)
- 	})
-
--	cluster.Keyspace = "gocql_test"
-+	cluster.Keyspace = opts.KeyspaceName()
- 	session, err := cluster.CreateSession()
- 	if err != nil {
- 		tb.Fatal("createSession:", err)
-@@ -183,6 +222,14 @@ func createSessionFromCluster(cluster *ClusterConfig, tb testing.TB) *Session {
- 	return session
- }
-
-+func createSessionFromClusterTabletsDisabled(cluster *ClusterConfig, tb testing.TB) *Session {
-+	return createSessionFromClusterHelper(cluster, tb, testKeyspaceOpts{tabletsDisabled: true})
-+}
-+
-+func createSessionFromCluster(cluster *ClusterConfig, tb testing.TB) *Session {
-+	return createSessionFromClusterHelper(cluster, tb, testKeyspaceOpts{tabletsDisabled: false})
-+}
-+
- func createSessionFromMultiNodeCluster(cluster *ClusterConfig, tb testing.TB) *Session {
- 	keyspace := "test1"
-
-@@ -191,7 +238,7 @@ func createSessionFromMultiNodeCluster(cluster *ClusterConfig, tb testing.TB) *S
- 		tb.Fatal("createSession:", err)
- 	}
-
--	initOnce.Do(func() {
-+	initKeyspaceOnce.GetOnce(keyspace).Do(func() {
- 		if err = createTable(session, `DROP KEYSPACE IF EXISTS `+keyspace); err != nil {
- 			panic(fmt.Sprintf("unable to drop keyspace: %v", err))
- 		}
 diff --git a/docker-compose.yml b/docker-compose.yml
 index 5a8ef97..8f2a7bb 100644
 --- a/docker-compose.yml
@@ -245,19 +51,6 @@ index fbaa008..997c571 100644
  		t.Fatal(err)
  	} else if rows != 1 {
  		t.Fatalf("expected to get 1 row got %d", rows)
-diff --git a/integration_test.go b/integration_test.go
-index cc8e673..87a3bc8 100644
---- a/integration_test.go
-+++ b/integration_test.go
-@@ -130,7 +130,7 @@ func TestHostFilterInitial(t *testing.T) {
- func TestWriteFailure(t *testing.T) {
- 	t.Skip("skipped due to unknown purpose")
- 	cluster := createCluster()
--	createKeyspace(t, cluster, "test")
-+	createKeyspace(t, cluster, "test", false)
- 	cluster.Keyspace = "test"
- 	session, err := cluster.CreateSession()
- 	if err != nil {
 diff --git a/ring_describer.go b/ring_describer.go
 index cad929d..e62bcd0 100644
 --- a/ring_describer.go
@@ -271,3 +64,2203 @@ index cad929d..e62bcd0 100644
  		}
 
  		if iter != nil {
+diff --git a/address_translators_test.go b/address_translators_test.go
+index 0bbce35..ac47b42 100644
+--- a/address_translators_test.go
++++ b/address_translators_test.go
+@@ -1,5 +1,29 @@
+-//go:build all || unit
+-// +build all unit
++//go:build unit
++// +build unit
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+diff --git a/batch_test.go b/batch_test.go
+index 4bf906b..1802940 100644
+--- a/batch_test.go
++++ b/batch_test.go
+@@ -1,5 +1,29 @@
+-//go:build all || cassandra
+-// +build all cassandra
++//go:build integration
++// +build integration
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+diff --git a/cass1batch_test.go b/cass1batch_test.go
+index f8a796b..867b244 100644
+--- a/cass1batch_test.go
++++ b/cass1batch_test.go
+@@ -1,5 +1,29 @@
+-//go:build all || cassandra
+-// +build all cassandra
++//go:build integration
++// +build integration
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+diff --git a/cassandra_test.go b/cassandra_test.go
+index e074acc..93ee951 100644
+--- a/cassandra_test.go
++++ b/cassandra_test.go
+@@ -1,5 +1,29 @@
+-//go:build all || cassandra || scylla
+-// +build all cassandra scylla
++//go:build integration
++// +build integration
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+@@ -497,14 +521,14 @@ func TestPagingWithBind(t *testing.T) {
+ func TestCAS(t *testing.T) {
+ 	cluster := createCluster()
+ 	cluster.SerialConsistency = LocalSerial
+-	session := createSessionFromCluster(cluster, t)
++	session := createSessionFromClusterTabletsDisabled(cluster, t)
+ 	defer session.Close()
+
+ 	if session.cfg.ProtoVersion == 1 {
+ 		t.Skip("lightweight transactions not supported. Please use Cassandra >= 2.0")
+ 	}
+
+-	if err := createTable(session, `CREATE TABLE gocql_test.cas_table (
++	if err := createTable(session, `CREATE TABLE cas_table (
+ 			title         varchar,
+ 			revid   	  timeuuid,
+ 			last_modified timestamp,
+@@ -669,14 +693,14 @@ func TestDurationType(t *testing.T) {
+ }
+
+ func TestMapScanCAS(t *testing.T) {
+-	session := createSession(t)
++	session := createSessionFromClusterTabletsDisabled(createCluster(), t)
+ 	defer session.Close()
+
+ 	if session.cfg.ProtoVersion == 1 {
+ 		t.Skip("lightweight transactions not supported. Please use Cassandra >= 2.0")
+ 	}
+
+-	if err := createTable(session, `CREATE TABLE gocql_test.cas_table2 (
++	if err := createTable(session, `CREATE TABLE cas_table2 (
+ 			title         varchar,
+ 			revid   	  timeuuid,
+ 			last_modified timestamp,
+@@ -1240,14 +1264,14 @@ func TestScanWithNilArguments(t *testing.T) {
+ }
+
+ func TestScanCASWithNilArguments(t *testing.T) {
+-	session := createSession(t)
++	session := createSessionFromClusterTabletsDisabled(createCluster(), t)
+ 	defer session.Close()
+
+ 	if session.cfg.ProtoVersion == 1 {
+ 		t.Skip("lightweight transactions not supported. Please use Cassandra >= 2.0")
+ 	}
+
+-	if err := createTable(session, `CREATE TABLE gocql_test.scan_cas_with_nil_arguments (
++	if err := createTable(session, `CREATE TABLE scan_cas_with_nil_arguments (
+ 		foo   varchar,
+ 		bar   varchar,
+ 		PRIMARY KEY (foo, bar)
+@@ -1709,7 +1733,7 @@ func TestPrepare_PreparedCacheKey(t *testing.T) {
+
+ 	// create a second keyspace
+ 	cluster2 := createCluster()
+-	createKeyspace(t, cluster2, "gocql_test2")
++	createKeyspace(t, cluster2, "gocql_test2", false)
+ 	cluster2.Keyspace = "gocql_test2"
+ 	session2, err := cluster2.CreateSession()
+ 	if err != nil {
+diff --git a/cloud_cluster_test.go b/cloud_cluster_test.go
+index 4133ac5..e0cb239 100644
+--- a/cloud_cluster_test.go
++++ b/cloud_cluster_test.go
+@@ -1,5 +1,5 @@
+-//go:build integration && scylla
+-// +build integration,scylla
++//go:build integration
++// +build integration
+
+ package gocql_test
+
+@@ -45,7 +45,7 @@ func TestCloudConnection(t *testing.T) {
+
+ 	var localAddress string
+ 	var localHostID gocql.UUID
+-	scanner := session.Query("SELECT broadcast_address, host_id FROM system.local").Iter().Scanner()
++	scanner := session.Query("SELECT broadcast_address, host_id FROM system.local WHERE key='local'").Iter().Scanner()
+ 	if scanner.Next() {
+ 		if err := scanner.Scan(&localAddress, &localHostID); err != nil {
+ 			t.Fatal(err)
+diff --git a/cluster_test.go b/cluster_test.go
+index b3e7dcb..f6c6d03 100644
+--- a/cluster_test.go
++++ b/cluster_test.go
+@@ -1,5 +1,29 @@
+-//go:build all || unit
+-// +build all unit
++//go:build unit
++// +build unit
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+diff --git a/common_test.go b/common_test.go
+index ad37bb2..25be9a7 100644
+--- a/common_test.go
++++ b/common_test.go
+@@ -1,3 +1,27 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql
+
+ import (
+@@ -13,18 +37,17 @@ import (
+ )
+
+ var (
+-	flagCluster          = flag.String("cluster", "127.0.0.1", "a comma-separated list of host:port tuples")
+-	flagMultiNodeCluster = flag.String("multiCluster", "127.0.0.2", "a comma-separated list of host:port tuples")
+-	flagProto            = flag.Int("proto", 0, "protcol version")
+-	flagCQL              = flag.String("cql", "3.0.0", "CQL version")
+-	flagRF               = flag.Int("rf", 1, "replication factor for test keyspace")
+-	clusterSize          = flag.Int("clusterSize", 1, "the expected size of the cluster")
+-	flagRetry            = flag.Int("retries", 5, "number of times to retry queries")
+-	flagAutoWait         = flag.Duration("autowait", 1000*time.Millisecond, "time to wait for autodiscovery to fill the hosts poll")
+-	flagRunSslTest       = flag.Bool("runssl", false, "Set to true to run ssl test")
+-	flagRunAuthTest      = flag.Bool("runauth", false, "Set to true to run authentication test")
+-	flagCompressTest     = flag.String("compressor", "", "compressor to use")
+-	flagTimeout          = flag.Duration("gocql.timeout", 5*time.Second, "sets the connection `timeout` for all operations")
++	flagCluster      = flag.String("cluster", "127.0.0.1", "a comma-separated list of host:port tuples")
++	flagProto        = flag.Int("proto", 0, "protcol version")
++	flagCQL          = flag.String("cql", "3.0.0", "CQL version")
++	flagRF           = flag.Int("rf", 1, "replication factor for test keyspace")
++	clusterSize      = flag.Int("clusterSize", 1, "the expected size of the cluster")
++	flagRetry        = flag.Int("retries", 5, "number of times to retry queries")
++	flagAutoWait     = flag.Duration("autowait", 1000*time.Millisecond, "time to wait for autodiscovery to fill the hosts poll")
++	flagRunSslTest   = flag.Bool("runssl", false, "Set to true to run ssl test")
++	flagRunAuthTest  = flag.Bool("runauth", false, "Set to true to run authentication test")
++	flagCompressTest = flag.String("compressor", "", "compressor to use")
++	flagTimeout      = flag.Duration("gocql.timeout", 5*time.Second, "sets the connection `timeout` for all operations")
+
+ 	flagCassVersion cassVersion
+ )
+@@ -39,10 +62,6 @@ func getClusterHosts() []string {
+ 	return strings.Split(*flagCluster, ",")
+ }
+
+-func getMultiNodeClusterHosts() []string {
+-	return strings.Split(*flagMultiNodeCluster, ",")
+-}
+-
+ func addSslOptions(cluster *ClusterConfig) *ClusterConfig {
+ 	if *flagRunSslTest {
+ 		cluster.Port = 9142
+@@ -56,7 +75,29 @@ func addSslOptions(cluster *ClusterConfig) *ClusterConfig {
+ 	return cluster
+ }
+
+-var initOnce sync.Once
++type OnceManager struct {
++	mu        sync.Mutex
++	keyspaces map[string]*sync.Once
++}
++
++func NewOnceManager() *OnceManager {
++	return &OnceManager{
++		keyspaces: make(map[string]*sync.Once),
++	}
++}
++
++func (o *OnceManager) GetOnce(key string) *sync.Once {
++	o.mu.Lock()
++	defer o.mu.Unlock()
++
++	if once, exists := o.keyspaces[key]; exists {
++		return once
++	}
++	o.keyspaces[key] = &sync.Once{}
++	return o.keyspaces[key]
++}
++
++var initKeyspaceOnce = NewOnceManager()
+
+ func createTable(s *Session, table string) error {
+ 	// lets just be really sure
+@@ -107,36 +148,7 @@ func createCluster(opts ...func(*ClusterConfig)) *ClusterConfig {
+ 	return cluster
+ }
+
+-func createMultiNodeCluster(opts ...func(*ClusterConfig)) *ClusterConfig {
+-	clusterHosts := getMultiNodeClusterHosts()
+-	cluster := NewCluster(clusterHosts...)
+-	cluster.ProtoVersion = *flagProto
+-	cluster.CQLVersion = *flagCQL
+-	cluster.Timeout = *flagTimeout
+-	cluster.Consistency = Quorum
+-	cluster.MaxWaitSchemaAgreement = 2 * time.Minute // travis might be slow
+-	if *flagRetry > 0 {
+-		cluster.RetryPolicy = &SimpleRetryPolicy{NumRetries: *flagRetry}
+-	}
+-
+-	switch *flagCompressTest {
+-	case "snappy":
+-		cluster.Compressor = &SnappyCompressor{}
+-	case "":
+-	default:
+-		panic("invalid compressor: " + *flagCompressTest)
+-	}
+-
+-	cluster = addSslOptions(cluster)
+-
+-	for _, opt := range opts {
+-		opt(cluster)
+-	}
+-
+-	return cluster
+-}
+-
+-func createKeyspace(tb testing.TB, cluster *ClusterConfig, keyspace string) {
++func createKeyspace(tb testing.TB, cluster *ClusterConfig, keyspace string, disableTablets bool) {
+ 	// TODO: tb.Helper()
+ 	c := *cluster
+ 	c.Keyspace = "system"
+@@ -152,25 +164,44 @@ func createKeyspace(tb testing.TB, cluster *ClusterConfig, keyspace string) {
+ 		panic(fmt.Sprintf("unable to drop keyspace: %v", err))
+ 	}
+
+-	err = createTable(session, fmt.Sprintf(`CREATE KEYSPACE %s
++	query := fmt.Sprintf(`CREATE KEYSPACE %s
+ 	WITH replication = {
+ 		'class' : 'NetworkTopologyStrategy',
+ 		'replication_factor' : %d
+-	}`, keyspace, *flagRF))
++	}`, keyspace, *flagRF)
++
++	if disableTablets {
++		query += " AND tablets = {'enabled': false}"
++	} else {
++		query += " AND tablets = {'enabled': true, 'initial': 8};"
++	}
++
++	err = createTable(session, query)
+
+ 	if err != nil {
+ 		panic(fmt.Sprintf("unable to create keyspace: %v", err))
+ 	}
+ }
+
+-func createSessionFromCluster(cluster *ClusterConfig, tb testing.TB) *Session {
++type testKeyspaceOpts struct {
++	tabletsDisabled bool
++}
++
++func (o *testKeyspaceOpts) KeyspaceName() string {
++	if o.tabletsDisabled {
++		return "gocql_test_tablets_disabled"
++	}
++	return "gocql_test"
++}
++
++func createSessionFromClusterHelper(cluster *ClusterConfig, tb testing.TB, opts testKeyspaceOpts) *Session {
+ 	// Drop and re-create the keyspace once. Different tests should use their own
+ 	// individual tables, but can assume that the table does not exist before.
+-	initOnce.Do(func() {
+-		createKeyspace(tb, cluster, "gocql_test")
++	initKeyspaceOnce.GetOnce(opts.KeyspaceName()).Do(func() {
++		createKeyspace(tb, cluster, opts.KeyspaceName(), opts.tabletsDisabled)
+ 	})
+
+-	cluster.Keyspace = "gocql_test"
++	cluster.Keyspace = opts.KeyspaceName()
+ 	session, err := cluster.CreateSession()
+ 	if err != nil {
+ 		tb.Fatal("createSession:", err)
+@@ -183,36 +214,12 @@ func createSessionFromCluster(cluster *ClusterConfig, tb testing.TB) *Session {
+ 	return session
+ }
+
+-func createSessionFromMultiNodeCluster(cluster *ClusterConfig, tb testing.TB) *Session {
+-	keyspace := "test1"
+-
+-	session, err := cluster.CreateSession()
+-	if err != nil {
+-		tb.Fatal("createSession:", err)
+-	}
+-
+-	initOnce.Do(func() {
+-		if err = createTable(session, `DROP KEYSPACE IF EXISTS `+keyspace); err != nil {
+-			panic(fmt.Sprintf("unable to drop keyspace: %v", err))
+-		}
+-
+-		if err = createTable(session, fmt.Sprintf(`CREATE KEYSPACE %s
+-		WITH replication = {
+-			'class': 'NetworkTopologyStrategy',
+-			'replication_factor': 1
+-		} AND tablets = {
+-			'initial': 8
+-		};`, keyspace)); err != nil {
+-			panic(fmt.Sprintf("unable to create keyspace: %v", err))
+-		}
+-
+-	})
+-
+-	if err := session.control.awaitSchemaAgreement(); err != nil {
+-		tb.Fatal(err)
+-	}
++func createSessionFromClusterTabletsDisabled(cluster *ClusterConfig, tb testing.TB) *Session {
++	return createSessionFromClusterHelper(cluster, tb, testKeyspaceOpts{tabletsDisabled: true})
++}
+
+-	return session
++func createSessionFromCluster(cluster *ClusterConfig, tb testing.TB) *Session {
++	return createSessionFromClusterHelper(cluster, tb, testKeyspaceOpts{tabletsDisabled: false})
+ }
+
+ func createSession(tb testing.TB, opts ...func(config *ClusterConfig)) *Session {
+diff --git a/compressor_test.go b/compressor_test.go
+index 93b4407..3095b29 100644
+--- a/compressor_test.go
++++ b/compressor_test.go
+@@ -1,5 +1,29 @@
+-//go:build all || unit
+-// +build all unit
++//go:build unit
++// +build unit
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql_test
+
+diff --git a/conn_test.go b/conn_test.go
+index 40a9e4a..2fd35b7 100644
+--- a/conn_test.go
++++ b/conn_test.go
+@@ -1,8 +1,29 @@
+-// Copyright (c) 2012 The gocql Authors. All rights reserved.
+-// Use of this source code is governed by a BSD-style
+-// license that can be found in the LICENSE file.
+-//go:build all || unit
+-// +build all unit
++//go:build unit
++// +build unit
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2012, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+diff --git a/connectionpool_test.go b/connectionpool_test.go
+index 7546672..90c1eb6 100644
+--- a/connectionpool_test.go
++++ b/connectionpool_test.go
+@@ -1,5 +1,29 @@
+-//go:build all || unit
+-// +build all unit
++//go:build unit
++// +build unit
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+diff --git a/control_integration_test.go b/control_integration_test.go
+index f43c595..193bc9e 100644
+--- a/control_integration_test.go
++++ b/control_integration_test.go
+@@ -1,5 +1,5 @@
+-//go:build integration && scylla
+-// +build integration,scylla
++//go:build integration
++// +build integration
+
+ package gocql
+
+@@ -21,7 +21,7 @@ func (d unixSocketDialer) DialContext(_ context.Context, _, _ string) (net.Conn,
+ }
+
+ func TestUnixSockets(t *testing.T) {
+-	socketPath := "/tmp/scylla/cql.m"
++	socketPath := "/tmp/scylla_node_1/cql.m"
+
+ 	c := createCluster()
+ 	c.NumConns = 1
+diff --git a/control_test.go b/control_test.go
+index 9794673..c5d5ef5 100644
+--- a/control_test.go
++++ b/control_test.go
+@@ -1,5 +1,29 @@
+-//go:build all || unit
+-// +build all unit
++//go:build unit
++// +build unit
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+diff --git a/errors_test.go b/errors_test.go
+index 76c3408..a904660 100644
+--- a/errors_test.go
++++ b/errors_test.go
+@@ -1,5 +1,29 @@
+-//go:build all || cassandra
+-// +build all cassandra
++//go:build integration
++// +build integration
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+diff --git a/events_test.go b/events_test.go
+index 8fc3eaf..acb3156 100644
+--- a/events_test.go
++++ b/events_test.go
+@@ -1,5 +1,29 @@
+-//go:build all || unit
+-// +build all unit
++//go:build unit
++// +build unit
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+diff --git a/example_batch_test.go b/example_batch_test.go
+index 33361e3..c10d6a2 100644
+--- a/example_batch_test.go
++++ b/example_batch_test.go
+@@ -1,3 +1,27 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql_test
+
+ import (
+@@ -5,7 +29,7 @@ import (
+ 	"fmt"
+ 	"log"
+
+-	"github.com/gocql/gocql"
++	gocql "github.com/gocql/gocql"
+ )
+
+ // Example_batch demonstrates how to execute a batch of statements.
+diff --git a/example_dynamic_columns_test.go b/example_dynamic_columns_test.go
+index 6b4d3da..eab1752 100644
+--- a/example_dynamic_columns_test.go
++++ b/example_dynamic_columns_test.go
+@@ -1,13 +1,38 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql_test
+
+ import (
+ 	"context"
+ 	"fmt"
+-	"github.com/gocql/gocql"
+ 	"log"
+ 	"os"
+ 	"reflect"
+ 	"text/tabwriter"
++
++	gocql "github.com/gocql/gocql"
+ )
+
+ // Example_dynamicColumns demonstrates how to handle dynamic column list.
+diff --git a/example_lwt_batch_test.go b/example_lwt_batch_test.go
+index 8afa340..848ca35 100644
+--- a/example_lwt_batch_test.go
++++ b/example_lwt_batch_test.go
+@@ -1,3 +1,27 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql_test
+
+ import (
+@@ -5,7 +29,7 @@ import (
+ 	"fmt"
+ 	"log"
+
+-	"github.com/gocql/gocql"
++	gocql "github.com/gocql/gocql"
+ )
+
+ // ExampleSession_MapExecuteBatchCAS demonstrates how to execute a batch lightweight transaction.
+diff --git a/example_lwt_test.go b/example_lwt_test.go
+index 5ffe834..7ca0fb8 100644
+--- a/example_lwt_test.go
++++ b/example_lwt_test.go
+@@ -1,10 +1,35 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql_test
+
+ import (
+ 	"context"
+ 	"fmt"
+-	"github.com/gocql/gocql"
+ 	"log"
++
++	gocql "github.com/gocql/gocql"
+ )
+
+ // ExampleQuery_MapScanCAS demonstrates how to execute a single-statement lightweight transaction.
+diff --git a/example_marshaler_test.go b/example_marshaler_test.go
+index 1d88d92..323ebd2 100644
+--- a/example_marshaler_test.go
++++ b/example_marshaler_test.go
+@@ -1,12 +1,37 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql_test
+
+ import (
+ 	"context"
+ 	"fmt"
+-	"github.com/gocql/gocql"
+ 	"log"
+ 	"strconv"
+ 	"strings"
++
++	gocql "github.com/gocql/gocql"
+ )
+
+ // MyMarshaler implements Marshaler and Unmarshaler.
+diff --git a/example_nulls_test.go b/example_nulls_test.go
+index 652e1c2..e288c99 100644
+--- a/example_nulls_test.go
++++ b/example_nulls_test.go
+@@ -1,9 +1,34 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql_test
+
+ import (
+ 	"fmt"
+-	"github.com/gocql/gocql"
+ 	"log"
++
++	gocql "github.com/gocql/gocql"
+ )
+
+ // Example_nulls demonstrates how to distinguish between null and zero value when needed.
+diff --git a/example_paging_test.go b/example_paging_test.go
+index c039308..1ddc4ce 100644
+--- a/example_paging_test.go
++++ b/example_paging_test.go
+@@ -1,9 +1,34 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql_test
+
+ import (
+ 	"fmt"
+-	"github.com/gocql/gocql"
+ 	"log"
++
++	gocql "github.com/gocql/gocql"
+ )
+
+ // Example_paging demonstrates how to manually fetch pages and use page state.
+diff --git a/example_set_test.go b/example_set_test.go
+index 4114e7a..76a97f8 100644
+--- a/example_set_test.go
++++ b/example_set_test.go
+@@ -1,10 +1,35 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql_test
+
+ import (
+ 	"fmt"
+-	"github.com/gocql/gocql"
+ 	"log"
+ 	"sort"
++
++	gocql "github.com/gocql/gocql"
+ )
+
+ // Example_set demonstrates how to use sets.
+diff --git a/example_test.go b/example_test.go
+index 589ec57..35ea051 100644
+--- a/example_test.go
++++ b/example_test.go
+@@ -1,10 +1,35 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql_test
+
+ import (
+ 	"context"
+ 	"fmt"
+-	"github.com/gocql/gocql"
+ 	"log"
++
++	gocql "github.com/gocql/gocql"
+ )
+
+ func Example() {
+diff --git a/example_udt_map_test.go b/example_udt_map_test.go
+index 1018456..03b98cc 100644
+--- a/example_udt_map_test.go
++++ b/example_udt_map_test.go
+@@ -1,10 +1,35 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql_test
+
+ import (
+ 	"context"
+ 	"fmt"
+-	"github.com/gocql/gocql"
+ 	"log"
++
++	gocql "github.com/gocql/gocql"
+ )
+
+ // Example_userDefinedTypesMap demonstrates how to work with user-defined types as maps.
+diff --git a/example_udt_marshaler_test.go b/example_udt_marshaler_test.go
+index ea9d71c..1b24f2a 100644
+--- a/example_udt_marshaler_test.go
++++ b/example_udt_marshaler_test.go
+@@ -1,9 +1,34 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql_test
+
+ import (
+ 	"context"
+-	"github.com/gocql/gocql"
+ 	"log"
++
++	gocql "github.com/gocql/gocql"
+ )
+
+ // MyUDTMarshaler implements UDTMarshaler.
+diff --git a/example_udt_struct_test.go b/example_udt_struct_test.go
+index 31c5965..d5045d6 100644
+--- a/example_udt_struct_test.go
++++ b/example_udt_struct_test.go
+@@ -1,10 +1,35 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql_test
+
+ import (
+ 	"context"
+ 	"fmt"
+-	"github.com/gocql/gocql"
+ 	"log"
++
++	gocql "github.com/gocql/gocql"
+ )
+
+ type MyUDT struct {
+diff --git a/example_udt_unmarshaler_test.go b/example_udt_unmarshaler_test.go
+index a5debcb..9d4d293 100644
+--- a/example_udt_unmarshaler_test.go
++++ b/example_udt_unmarshaler_test.go
+@@ -1,10 +1,35 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql_test
+
+ import (
+ 	"context"
+ 	"fmt"
+-	"github.com/gocql/gocql"
+ 	"log"
++
++	gocql "github.com/gocql/gocql"
+ )
+
+ // MyUDTUnmarshaler implements UDTUnmarshaler.
+diff --git a/exec_test.go b/exec_test.go
+index 8ee6987..9c73c70 100644
+--- a/exec_test.go
++++ b/exec_test.go
+@@ -1,5 +1,5 @@
+-//go:build all || integration
+-// +build all integration
++//go:build integration
++// +build integration
+
+ package gocql
+
+diff --git a/export_test.go b/export_test.go
+index 0580575..925c268 100644
+--- a/export_test.go
++++ b/export_test.go
+@@ -1,5 +1,5 @@
+-//go:build integration || unit
+-// +build integration unit
++//go:build integration
++// +build integration
+
+ package gocql
+
+diff --git a/filters_test.go b/filters_test.go
+index d1c97dd..3c2f50b 100644
+--- a/filters_test.go
++++ b/filters_test.go
+@@ -1,5 +1,29 @@
+-//go:build all || unit
+-// +build all unit
++//go:build unit
++// +build unit
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+diff --git a/frame_test.go b/frame_test.go
+index 29da03b..deace00 100644
+--- a/frame_test.go
++++ b/frame_test.go
+@@ -1,5 +1,29 @@
+-//go:build all || unit
+-// +build all unit
++//go:build unit
++// +build unit
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+diff --git a/framer_bench_test.go b/framer_bench_test.go
+index 1d220a8..953e0e9 100644
+--- a/framer_bench_test.go
++++ b/framer_bench_test.go
+@@ -1,5 +1,29 @@
+-//go:build all
+-// +build all
++//go:build bench
++// +build bench
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+diff --git a/helpers_test.go b/helpers_test.go
+index df1e9b5..38ed02d 100644
+--- a/helpers_test.go
++++ b/helpers_test.go
+@@ -1,5 +1,29 @@
+-//go:build all || unit
+-// +build all unit
++//go:build unit
++// +build unit
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+diff --git a/host_source_test.go b/host_source_test.go
+index 49473b6..6fe876d 100644
+--- a/host_source_test.go
++++ b/host_source_test.go
+@@ -1,5 +1,29 @@
+-//go:build all || unit
+-// +build all unit
++//go:build unit
++// +build unit
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+diff --git a/integration_serialization_scylla_test.go b/integration_serialization_scylla_test.go
+index e78cd30..73a4e82 100644
+--- a/integration_serialization_scylla_test.go
++++ b/integration_serialization_scylla_test.go
+@@ -1,5 +1,5 @@
+-//go:build integration && scylla
+-// +build integration,scylla
++//go:build integration
++// +build integration
+
+ package gocql
+
+diff --git a/integration_test.go b/integration_test.go
+index cc8e673..d59836a 100644
+--- a/integration_test.go
++++ b/integration_test.go
+@@ -1,5 +1,29 @@
+-//go:build all || integration
+-// +build all integration
++//go:build integration
++// +build integration
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+@@ -130,7 +154,7 @@ func TestHostFilterInitial(t *testing.T) {
+ func TestWriteFailure(t *testing.T) {
+ 	t.Skip("skipped due to unknown purpose")
+ 	cluster := createCluster()
+-	createKeyspace(t, cluster, "test")
++	createKeyspace(t, cluster, "test", false)
+ 	cluster.Keyspace = "test"
+ 	session, err := cluster.CreateSession()
+ 	if err != nil {
+diff --git a/keyspace_table_test.go b/keyspace_table_test.go
+index 7707c18..0b93f62 100644
+--- a/keyspace_table_test.go
++++ b/keyspace_table_test.go
+@@ -1,5 +1,29 @@
+-//go:build all || integration
+-// +build all integration
++//go:build integration
++// +build integration
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+diff --git a/marshal_test.go b/marshal_test.go
+index a6a8dcf..891ee93 100644
+--- a/marshal_test.go
++++ b/marshal_test.go
+@@ -1,5 +1,29 @@
+-//go:build all || unit
+-// +build all unit
++//go:build unit
++// +build unit
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+diff --git a/metadata_scylla_test.go b/metadata_scylla_test.go
+index 4efc3ee..38e4dda 100644
+--- a/metadata_scylla_test.go
++++ b/metadata_scylla_test.go
+@@ -1,5 +1,5 @@
+-//go:build !cassandra && unit
+-// +build !cassandra,unit
++//go:build unit
++// +build unit
+
+ // Copyright (c) 2015 The gocql Authors. All rights reserved.
+ // Use of this source code is governed by a BSD-style
+diff --git a/policies_integration_test.go b/policies_integration_test.go
+index 608ac32..fd905b8 100644
+--- a/policies_integration_test.go
++++ b/policies_integration_test.go
+@@ -1,5 +1,5 @@
+-//go:build integration && scylla
+-// +build integration,scylla
++//go:build integration
++// +build integration
+
+ package gocql
+
+diff --git a/policies_test.go b/policies_test.go
+index e3d9a78..c2094a8 100644
+--- a/policies_test.go
++++ b/policies_test.go
+@@ -2,8 +2,32 @@
+ // Use of this source code is governed by a BSD-style
+ // license that can be found in the LICENSE file.
+
+-//go:build all || unit
+-// +build all unit
++//go:build unit
++// +build unit
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+diff --git a/recreate_test.go b/recreate_test.go
+index e21ce5b..ecc3257 100644
+--- a/recreate_test.go
++++ b/recreate_test.go
+@@ -1,5 +1,5 @@
+-//go:build integration && scylla
+-// +build integration,scylla
++//go:build integration
++// +build integration
+
+ // Copyright (C) 2017 ScyllaDB
+
+diff --git a/ring_describer_test.go b/ring_describer_test.go
+index 944b45a..d451e34 100644
+--- a/ring_describer_test.go
++++ b/ring_describer_test.go
+@@ -1,5 +1,5 @@
+-//go:build all || unit
+-// +build all unit
++//go:build unit
++// +build unit
+
+ package gocql
+
+diff --git a/schema_queries_test.go b/schema_queries_test.go
+index 9281d23..634a9bf 100644
+--- a/schema_queries_test.go
++++ b/schema_queries_test.go
+@@ -1,5 +1,5 @@
+-//go:build integration && scylla
+-// +build integration,scylla
++//go:build integration
++// +build integration
+
+ package gocql
+
+diff --git a/scylla_shard_aware_port_integration_test.go b/scylla_shard_aware_port_integration_test.go
+index 47c0b40..b6aa1fc 100644
+--- a/scylla_shard_aware_port_integration_test.go
++++ b/scylla_shard_aware_port_integration_test.go
+@@ -1,5 +1,5 @@
+-//go:build integration && scylla
+-// +build integration,scylla
++//go:build integration
++// +build integration
+
+ package gocql
+
+diff --git a/scylla_test.go b/scylla_test.go
+index e69dfad..cc5e3a0 100644
+--- a/scylla_test.go
++++ b/scylla_test.go
+@@ -1,5 +1,5 @@
+-//go:build all || unit
+-// +build all unit
++//go:build unit
++// +build unit
+
+ package gocql
+
+diff --git a/session_connect_test.go b/session_connect_test.go
+index 8f4265b..d2097b6 100644
+--- a/session_connect_test.go
++++ b/session_connect_test.go
+@@ -1,3 +1,27 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
++
+ package gocql
+
+ import (
+diff --git a/session_test.go b/session_test.go
+index 2969771..8aca42f 100644
+--- a/session_test.go
++++ b/session_test.go
+@@ -1,5 +1,29 @@
+-//go:build all || cassandra || scylla
+-// +build all cassandra scylla
++//go:build integration
++// +build integration
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+diff --git a/session_unit_test.go b/session_unit_test.go
+index c73677e..ef2a454 100644
+--- a/session_unit_test.go
++++ b/session_unit_test.go
+@@ -1,5 +1,29 @@
+-//go:build all || unit
+-// +build all unit
++//go:build unit
++// +build unit
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+diff --git a/stress_test.go b/stress_test.go
+index 71e33d5..4d08b14 100644
+--- a/stress_test.go
++++ b/stress_test.go
+@@ -1,5 +1,29 @@
+-//go:build all || cassandra
+-// +build all cassandra
++//go:build integration
++// +build integration
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+diff --git a/tablet_integration_test.go b/tablet_integration_test.go
+index d2b6ded..4998731 100644
+--- a/tablet_integration_test.go
++++ b/tablet_integration_test.go
+@@ -1,5 +1,5 @@
+-//go:build tablet
+-// +build tablet
++//go:build integration
++// +build integration
+
+ package gocql
+
+@@ -11,16 +11,16 @@ import (
+
+ // Check if TokenAwareHostPolicy works correctly when using tablets
+ func TestTablets(t *testing.T) {
+-	cluster := createMultiNodeCluster()
++	cluster := createCluster()
+
+ 	fallback := RoundRobinHostPolicy()
+ 	cluster.PoolConfig.HostSelectionPolicy = TokenAwareHostPolicy(fallback)
+
+-	session := createSessionFromMultiNodeCluster(cluster, t)
++	session := createSessionFromCluster(cluster, t)
+ 	defer session.Close()
+
+-	if err := createTable(session, fmt.Sprintf(`CREATE TABLE %s.%s (pk int, ck int, v int, PRIMARY KEY (pk, ck));
+-	`, "test1", "table1")); err != nil {
++	if err := createTable(session, fmt.Sprintf(`CREATE TABLE %s (pk int, ck int, v int, PRIMARY KEY (pk, ck));
++	`, "test_tablets")); err != nil {
+ 		panic(fmt.Sprintf("unable to create table: %v", err))
+ 	}
+
+@@ -36,7 +36,7 @@ func TestTablets(t *testing.T) {
+ 	i := 0
+ 	for i < 50 {
+ 		i = i + 1
+-		err := session.Query(`INSERT INTO test1.table1 (pk, ck, v) VALUES (?, ?, ?);`, i, i%5, i%2).WithContext(ctx).Exec()
++		err := session.Query(`INSERT INTO test_tablets (pk, ck, v) VALUES (?, ?, ?);`, i, i%5, i%2).WithContext(ctx).Exec()
+ 		if err != nil {
+ 			t.Fatal(err)
+ 		}
+@@ -51,7 +51,7 @@ func TestTablets(t *testing.T) {
+ 		var ck int
+ 		var v int
+
+-		err := session.Query(`SELECT pk, ck, v FROM test1.table1 WHERE pk = ?;`, i).WithContext(ctx).Consistency(One).Trace(trace).Scan(&pk, &ck, &v)
++		err := session.Query(`SELECT pk, ck, v FROM test_tablets WHERE pk = ?;`, i).WithContext(ctx).Consistency(One).Trace(trace).Scan(&pk, &ck, &v)
+ 		if err != nil {
+ 			t.Fatal(err)
+ 		}
+@@ -101,16 +101,16 @@ func TestTablets(t *testing.T) {
+
+ // Check if shard awareness works correctly when using tablets
+ func TestTabletsShardAwareness(t *testing.T) {
+-	cluster := createMultiNodeCluster()
++	cluster := createCluster()
+
+ 	fallback := RoundRobinHostPolicy()
+ 	cluster.PoolConfig.HostSelectionPolicy = TokenAwareHostPolicy(fallback)
+
+-	session := createSessionFromMultiNodeCluster(cluster, t)
++	session := createSessionFromCluster(cluster, t)
+ 	defer session.Close()
+
+-	if err := createTable(session, fmt.Sprintf(`CREATE TABLE %s.%s (pk int, ck int, v int, PRIMARY KEY (pk, ck));
+-	`, "test1", "table_shard")); err != nil {
++	if err := createTable(session, fmt.Sprintf(`CREATE TABLE %s (pk int, ck int, v int, PRIMARY KEY (pk, ck));
++	`, "test_tablets_shard_awarness")); err != nil {
+ 		panic(fmt.Sprintf("unable to create table: %v", err))
+ 	}
+
+@@ -119,7 +119,7 @@ func TestTabletsShardAwareness(t *testing.T) {
+ 	i := 0
+ 	for i < 50 {
+ 		i = i + 1
+-		err := session.Query(`INSERT INTO test1.table_shard (pk, ck, v) VALUES (?, ?, ?);`, i, i%5, i%2).WithContext(ctx).Exec()
++		err := session.Query(`INSERT INTO test_tablets_shard_awarness (pk, ck, v) VALUES (?, ?, ?);`, i, i%5, i%2).WithContext(ctx).Exec()
+ 		if err != nil {
+ 			t.Fatal(err)
+ 		}
+@@ -134,7 +134,7 @@ func TestTabletsShardAwareness(t *testing.T) {
+ 		var ck int
+ 		var v int
+
+-		err := session.Query(`SELECT pk, ck, v FROM test1.table_shard WHERE pk = ?;`, i).WithContext(ctx).Consistency(One).Trace(trace).Scan(&pk, &ck, &v)
++		err := session.Query(`SELECT pk, ck, v FROM test_tablets_shard_awarness WHERE pk = ?;`, i).WithContext(ctx).Consistency(One).Trace(trace).Scan(&pk, &ck, &v)
+ 		if err != nil {
+ 			t.Fatal(err)
+ 		}
+diff --git a/tablet_test.go b/tablet_test.go
+index 005e5da..ffe7650 100644
+--- a/tablet_test.go
++++ b/tablet_test.go
+@@ -1,5 +1,5 @@
+-//go:build all || unit
+-// +build all unit
++//go:build unit
++// +build unit
+
+ package gocql
+
+diff --git a/token_test.go b/token_test.go
+index 1f30ea4..ce442bb 100644
+--- a/token_test.go
++++ b/token_test.go
+@@ -2,8 +2,32 @@
+ // Use of this source code is governed by a BSD-style
+ // license that can be found in the LICENSE file.
+
+-//go:build all || unit
+-// +build all unit
++//go:build unit
++// +build unit
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+diff --git a/topology_test.go b/topology_test.go
+index e817f85..d7eb6a6 100644
+--- a/topology_test.go
++++ b/topology_test.go
+@@ -1,5 +1,29 @@
+-//go:build all || unit
+-// +build all unit
++//go:build unit
++// +build unit
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+diff --git a/tracer_test.go b/tracer_test.go
+index 571a3d0..d025de6 100644
+--- a/tracer_test.go
++++ b/tracer_test.go
+@@ -1,5 +1,5 @@
+-//go:build all || cassandra || scylla
+-// +build all cassandra scylla
++//go:build integration
++// +build integration
+
+ package gocql
+
+diff --git a/tuple_test.go b/tuple_test.go
+index 4101866..446cd7f 100644
+--- a/tuple_test.go
++++ b/tuple_test.go
+@@ -1,5 +1,29 @@
+-//go:build all || integration
+-// +build all integration
++//go:build integration
++// +build integration
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+diff --git a/udt_test.go b/udt_test.go
+index 0a3c361..5eab841 100644
+--- a/udt_test.go
++++ b/udt_test.go
+@@ -1,5 +1,29 @@
+-//go:build all || cassandra
+-// +build all cassandra
++//go:build integration
++// +build integration
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+diff --git a/uuid_test.go b/uuid_test.go
+index 3e6e1b2..d4b5ada 100644
+--- a/uuid_test.go
++++ b/uuid_test.go
+@@ -1,5 +1,29 @@
+-//go:build all || unit
+-// +build all unit
++//go:build unit
++// +build unit
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+
+diff --git a/wiki_test.go b/wiki_test.go
+index dea2b4c..aee55ae 100644
+--- a/wiki_test.go
++++ b/wiki_test.go
+@@ -1,5 +1,29 @@
+-//go:build all || cassandra
+-// +build all cassandra
++//go:build integration
++// +build integration
++
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++/*
++ * Content before git sha 34fdeebefcbf183ed7f916f931aa0586fdaa1b40
++ * Copyright (c) 2016, The Gocql authors,
++ * provided under the BSD-3-Clause License.
++ * See the NOTICE file distributed with this work for additional information.
++ */
+
+ package gocql
+

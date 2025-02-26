@@ -1,0 +1,12 @@
+# Last verified state on Jul 31, 2023 by Łukasz Sójka
+tests:
+  ignore:
+  skip:
+  flaky:
+  - TestWriteFailure
+v4_tests:
+  ignore:
+  - TestUDF
+  skip:
+  flaky:
+  - TestWriteFailure
