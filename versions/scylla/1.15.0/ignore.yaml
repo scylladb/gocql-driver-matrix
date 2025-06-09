@@ -1,0 +1,14 @@
+# Last verified state on Jul 31, 2023 by Łukasz Sójka
+tests:
+  ignore:
+  - TestUnixSockets
+  skip:
+  flaky:
+  - TestWriteFailure
+v4_tests:
+  ignore:
+  - TestUDF
+  - TestUnixSockets
+  skip:
+  flaky:
+  - TestWriteFailure
