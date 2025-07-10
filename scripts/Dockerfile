@@ -8,7 +8,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
-FROM golang:1.20.7 AS go-build
+FROM golang:1.24.4 AS go-build
 
 FROM bitnami/minideb:bullseye
 
