@@ -1,0 +1,9 @@
+# Last verified state on Jul 31, 2023 by Łukasz Sójka
+tests:
+  skip:
+  - TestUnixSockets
+  - TestRecreateSchema
+v4_tests:
+  skip:
+  - TestUnixSockets
+  - TestRecreateSchema
