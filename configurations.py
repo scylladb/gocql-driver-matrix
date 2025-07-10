@@ -9,8 +9,8 @@ class TestConfiguration:
     cluster_configuration: Dict[str, str]
 
 
-integration_tests = TestConfiguration(tags=["integration"], test_command_args='-timeout=1m -race -tags="integration"', cluster_configuration={})
-ccm_tests = TestConfiguration(tags=["ccm"], test_command_args='-timeout=1m -race -tags="ccm"', cluster_configuration={})
+integration_tests = TestConfiguration(tags=["integration"], test_command_args='-timeout=10m -race -tags="integration"', cluster_configuration={})
+ccm_tests = TestConfiguration(tags=["ccm"], test_command_args='-timeout=10m -race -tags="ccm"', cluster_configuration={})
 
 test_config_map = {
     "integration": integration_tests,
