@@ -47,7 +47,7 @@ class TestCluster:
             }
         cluster_config.update(configuration)
         self._cluster.set_configuration_options(cluster_config)
-        self._cluster.populate(1)
+        self._cluster.populate(3)
         logger.info("Cluster prepared")
 
     def __enter__(self):
