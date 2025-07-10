@@ -33,7 +33,7 @@ def main(arguments: argparse.Namespace):
                              driver_type, driver_version, protocol)
                 logging.info(", ".join(f"{key}: {value}" for key, value in result.summary.items()))
                 if result.is_failed:
-                    if not result.summary["tests"]:
+                    if not result.summary.get("tests"):
                         logging.error("The run is failed because of one or more steps in the setup are failed")
                     else:
                         logging.error("Please check the report because there were failed tests")
