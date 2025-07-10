@@ -25,8 +25,8 @@ class ProcessJUnit:
         tree = ElementTree.parse(self._xunit_file).find("testsuite")
         for element in tree.iter("testcase"):
             test_full_name = element.attrib['name']
-            is_ignore_test = test_full_name in self._ignore_set["ignore"]
-            is_flaky_test = test_full_name in self._ignore_set["flaky"]
+            is_ignore_test = test_full_name in self._ignore_set.get("ignore", [])
+            is_flaky_test = test_full_name in self._ignore_set.get("flaky", [])
             if len(element):
                 element_test_details = list(element.iter())[1]
                 category_type = element_test_details.tag
