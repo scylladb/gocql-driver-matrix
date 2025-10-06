@@ -42,6 +42,7 @@ class TestCluster:
         self._cluster: ccm.ScyllaCluster = ccm.ScyllaCluster(self.cluster_directory, 'test', cassandra_version=version)
         self._cluster.set_ipprefix(ip_prefix)
         cluster_config = {
+                "maintenance_socket": "workdir",
                 "experimental_features": ["udf"],
                 "enable_user_defined_functions": "true",
             }
