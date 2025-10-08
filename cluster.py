@@ -68,7 +68,12 @@ class TestCluster:
         self._cluster.start(wait_for_binary_proto=True)
         nodes_count = len(self._cluster.nodes)
         logger.info("test cluster started")
-        return f"-rf={nodes_count} -clusterSize={nodes_count} -cluster={self.ip_addresses}"
+        path = "../gocql-scylla/ccm/test/node1/cql.m"
+        if not Path(path).exists():
+            logger.info("Cluster socket file %s is not found", path)
+            return f"-rf={nodes_count} -clusterSize={nodes_count} -cluster={self.ip_addresses}"
+        else:
+            return f"-rf={nodes_count} -clusterSize={nodes_count} -cluster={self.ip_addresses} -cluster-socket=../gocql-scylla/ccm/test/node1/cql.m"
 
     def remove(self):
         logger.info("Removing test cluster...")
