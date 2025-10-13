@@ -688,7 +688,7 @@ index f43c595..193bc9e 100644
 
  func TestUnixSockets(t *testing.T) {
 -	socketPath := "/tmp/scylla/cql.m"
-+	socketPath := "/tmp/scylla_node_1/cql.m"
++	socketPath := "../gocql-scylla/ccm/test/node1/cql.m"
 
  	c := createCluster()
  	c.NumConns = 1
