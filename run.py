@@ -162,7 +162,10 @@ class Run:
                 with TestCluster(self._gocql_driver_git, self._scylla_version, configuration=test_config.cluster_configuration) as cluster:
                     cluster_params = cluster.start()
                     logging.info("Run tests for tag '%s'", test)
-                    args = f"-gocql.timeout=60s -proto={self._protocol} -autowait=2000ms -compressor=snappy -gocql.cversion={self._cversion}"
+                    cversion = self._cversion if self._scylla_version is None else self._scylla_version.replace("release:", "")
+                    args = f"-gocql.timeout=60s -proto={self._protocol} -autowait=2000ms -compressor=snappy -gocql.cversion={cversion}"
+                    if self._driver_type == 'scylla' and Version(self._full_driver_version.lstrip('v')) >= Version('1.16.1'):
+                        args += " -distribution=scylla"
                     go_test_cmd = f'go test -v {test_config.test_command_args} {cluster_params} {skip_tests} {args} ./...  2>&1 | go-junit-report -iocopy -out {self.xunit_file}_part_{idx}'
                     logging.info("Running the command '%s'", go_test_cmd)
                     subprocess.call(f"{go_test_cmd}", shell=True, executable="/bin/bash",
