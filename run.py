@@ -162,7 +162,7 @@ class Run:
                 with TestCluster(self._gocql_driver_git, self._scylla_version, configuration=test_config.cluster_configuration) as cluster:
                     cluster_params = cluster.start()
                     logging.info("Run tests for tag '%s'", test)
-                    cversion = self._cversion if self._scylla_version is None else self._scylla_version.replace("release:", "")
+                    cversion = self._cversion if not self._scylla_version else self._scylla_version.split('~')[0]
                     args = f"-gocql.timeout=60s -proto={self._protocol} -autowait=2000ms -compressor=snappy -gocql.cversion={cversion}"
                     if self._driver_type == 'scylla' and Version(self._full_driver_version.lstrip('v')) >= Version('1.16.1'):
                         args += " -distribution=scylla"
