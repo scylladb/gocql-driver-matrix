@@ -78,6 +78,9 @@ class ProcessJUnit:
         for part in part_files:
             tree = ElementTree.parse(part)
             part_testsuites = tree.find("testsuite[@name='github.com/gocql/gocql']")
+            if part_testsuites is None:
+                print(f"Warning: Could not find testsuite with name 'github.com/gocql/gocql' in {part}")
+                continue
             timestamp = part_testsuites.attrib.get('timestamp')
             time_taken += float(part_testsuites.attrib.get('time', 0))
             for elem in part_testsuites:
