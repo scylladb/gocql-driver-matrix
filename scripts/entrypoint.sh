@@ -11,5 +11,6 @@ if [ ! -d "/gocql-driver-matrix" ]
   then echo "Error. /gocql-driver-matrix is not mounted. Mount gocql-driver-matrix repo to /gocql-driver-matrix in docker run command."
   exit 1
 fi
+pip install --upgrade pip --quiet
 pip install /scylla-ccm
 cd /gocql-driver-matrix && python3 main.py /gocql "$@"

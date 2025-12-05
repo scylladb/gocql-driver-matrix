@@ -156,6 +156,7 @@ class Run:
         logging.info("Changing the current working directory to the '%s' path", self._gocql_driver_git)
         os.chdir(self._gocql_driver_git)
         if self._checkout_branch() and self._apply_patch_files():
+            driver_module = get_driver_module(str(self._gocql_driver_git))
             for idx, test in enumerate(self._test_tags):
                 test_config: TestConfiguration = test_config_map[test]
                 skip_tests = f'-skip "{"|".join(self.ignore_tests["skip"]) if self.ignore_tests.get("skip") else ""}"'
@@ -171,6 +172,28 @@ class Run:
                     subprocess.call(f"{go_test_cmd}", shell=True, executable="/bin/bash",
                                     env=self.environment, cwd=self._gocql_driver_git)
             junit.save_after_analysis(driver_version=self.driver_version, protocol=self._protocol,
-                                      gocql_driver_type=self._driver_type)
+                                      gocql_driver_type=self._driver_type, driver_module=driver_module)
             metadata_file.write_text(json.dumps(metadata))
         return junit
+   
+    
+def get_driver_module(gocql_driver_git):
+    """
+    Extract the module name from the go.mod file in the gocql driver repository.
+    
+    :param gocql_driver_git: Path to the gocql driver git repository.
+    :return: The module name as a string.
+    """
+    DEFAULT_GOCQL_MODULE = "github.com/gocql/gocql"
+    go_mod_file = os.path.join(gocql_driver_git, "go.mod")
+    if not os.path.isfile(go_mod_file):
+        logging.error(f"go.mod file not found in {gocql_driver_git}, defaulting module name to '{DEFAULT_GOCQL_MODULE}'")
+        return DEFAULT_GOCQL_MODULE
+    with open(go_mod_file, "r") as f:
+        for line in f:
+            if line.startswith("module "):
+                module = line.split("module ")[1].strip()
+                logging.info(f"Found module name in go.mod: {module}")
+                return module
+    logging.error(f"Module name not found in go.mod file, defaulting module name to '{DEFAULT_GOCQL_MODULE}'")
+    return DEFAULT_GOCQL_MODULE
