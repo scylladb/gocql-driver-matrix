@@ -67,7 +67,7 @@ class ProcessJUnit:
         self._analysis()
         return self._summary_full_details
 
-    def _merge_part_results(self):
+    def _merge_part_results(self, driver_module: str):
         """
         Merge the part files into one XML file.
         """
@@ -77,9 +77,9 @@ class ProcessJUnit:
         part_files = sorted(self._xunit_file.parent.glob(f"{self._xunit_file.name}_part_*"))
         for part in part_files:
             tree = ElementTree.parse(part)
-            part_testsuites = tree.find("testsuite[@name='github.com/gocql/gocql']")
+            part_testsuites = tree.find(f"testsuite[@name='{driver_module}']")
             if part_testsuites is None:
-                print(f"Warning: Could not find testsuite with name 'github.com/gocql/gocql' in {part}")
+                print(f"Warning: Could not find testsuite with name '{driver_module}' in {part}")
                 continue
             timestamp = part_testsuites.attrib.get('timestamp')
             time_taken += float(part_testsuites.attrib.get('time', 0))
@@ -94,7 +94,7 @@ class ProcessJUnit:
 
         root = ElementTree.Element('testsuites')
 
-        root.append(ElementTree.Element('testsuite', attrib={'name': 'github.com/gocql/gocql', 'time': str(time_taken), 'timestamp': timestamp}))
+        root.append(ElementTree.Element('testsuite', attrib={'name': driver_module, 'time': str(time_taken), 'timestamp': timestamp}))
         for testcase in test_cases.values():
             root[0].append(testcase)
 
@@ -102,7 +102,7 @@ class ProcessJUnit:
         tree.write(self._xunit_file, encoding='utf-8', xml_declaration=True)
 
     @lru_cache(maxsize=None)
-    def save_after_analysis(self, driver_version: str, protocol: int, gocql_driver_type: str) -> None:
+    def save_after_analysis(self, driver_version: str, protocol: int, gocql_driver_type: str, driver_module: str) -> None:
         """
         Create a new XML file with the correct run results after filtering the names of the tests marked as "skip" in
         the YAML file.
@@ -112,8 +112,8 @@ class ProcessJUnit:
         :param protocol: The cqlsh native protocol number
         :param gocql_driver_type: The driver type - can be "scylla" or "upstream"
         """
-        self._merge_part_results()
-        tree = ElementTree.parse(self._xunit_file).find("testsuite[@name='github.com/gocql/gocql']")
+        self._merge_part_results(driver_module=driver_module)
+        tree = ElementTree.parse(self._xunit_file).find(f"testsuite[@name='{driver_module}']")
         new_tree = ElementTree.Element("testsuites")
         _ = [tree.attrib.__setitem__(key, str(value)) for key, value in self.summary.items()]
         xunit_child = ElementTree.SubElement(new_tree, "testsuite", attrib=tree.attrib)
