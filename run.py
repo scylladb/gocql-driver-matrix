@@ -192,7 +192,7 @@ def get_driver_module(gocql_driver_git):
     with open(go_mod_file, "r") as f:
         for line in f:
             if line.startswith("module "):
-                module = line.split("module ")[1].strip()
+                module = line[7:].strip()
                 logging.info(f"Found module name in go.mod: {module}")
                 return module
     logging.error(f"Module name not found in go.mod file, defaulting module name to '{DEFAULT_GOCQL_MODULE}'")
