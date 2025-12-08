@@ -111,6 +111,7 @@ class ProcessJUnit:
         :param driver_version: The gocql-driver tag (Example: 1.11.1 or 1.4.0)
         :param protocol: The cqlsh native protocol number
         :param gocql_driver_type: The driver type - can be "scylla" or "upstream"
+        :param driver_module: The Go module name extracted from go.mod
         """
         self._merge_part_results(driver_module=driver_module)
         tree = ElementTree.parse(self._xunit_file).find(f"testsuite[@name='{driver_module}']")
