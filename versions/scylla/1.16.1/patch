@@ -16,7 +16,7 @@ diff --git a/tablet_integration_test.go b/tablet_integration_test.go
 index 946299d..db6bdea 100644
 --- a/tablet_integration_test.go
 +++ b/tablet_integration_test.go
-@@ -36,154 +36,30 @@ func TestTablets(t *testing.T) {
+@@ -36,154 +36,35 @@ func TestTablets(t *testing.T) {
 
  	ctx := context.Background()
 
@@ -119,6 +119,11 @@ index 946299d..db6bdea 100644
 -		// When it happens queries can hit wrong tablet despite tablet been just learned
 -		// Here we go for second attempt when it happens
 -		// Assumption is that having second tablet migration right away is impossible
++	// v1.16.1 does not implement tablet-learning that causes Scylla to stop sending hints,
++	// so on Scylla 2025.x+ (where tablets are enabled by default) hints never stop.
++	if flagCassVersion.Major >= 2025 {
++		t.Skip("Skipping tablet hint check on Scylla 2025.x+: v1.16.1 does not stop tablet hints on this server version")
++	}
 +	for i := 0; i < 5; i++ {
  		for attempt := 1; true; attempt++ {
 -			trace := NewTracer(session)
