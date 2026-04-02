@@ -185,3 +185,149 @@ index 946299d..db6bdea 100644
  	}
 -	return shardList
  }
+diff --git a/cassandra_test.go b/cassandra_test.go
+index 9ef49637a..fa4ea203f 100644
+--- a/cassandra_test.go
++++ b/cassandra_test.go
+@@ -2661,16 +2661,19 @@ func TestRoutingKey(t *testing.T) {
+ 	session := createSession(t)
+ 	defer session.Close()
+ 
+-	if err := createTable(session, "CREATE TABLE gocql_test.test_single_routing_key (first_id int, second_id int, PRIMARY KEY (first_id, second_id))"); err != nil {
++	singleTable := testTableName(t, "single")
++	compositeTable := testTableName(t, "composite")
++
++	if err := createTable(session, fmt.Sprintf("CREATE TABLE gocql_test.%s (first_id int, second_id int, PRIMARY KEY (first_id, second_id))", singleTable)); err != nil {
+ 		t.Fatalf("failed to create table with error '%v'", err)
+ 	}
+-	if err := createTable(session, "CREATE TABLE gocql_test.test_composite_routing_key (first_id int, second_id int, PRIMARY KEY ((first_id, second_id)))"); err != nil {
++	if err := createTable(session, fmt.Sprintf("CREATE TABLE gocql_test.%s (first_id int, second_id int, PRIMARY KEY ((first_id, second_id)))", compositeTable)); err != nil {
+ 		t.Fatalf("failed to create table with error '%v'", err)
+ 	}
+ 
+ 	initCacheSize := session.routingKeyInfoCache.lru.Len()
+ 
+-	routingKeyInfo, err := session.routingKeyInfo(context.Background(), "SELECT * FROM test_single_routing_key WHERE second_id=? AND first_id=?", time.Second)
++	routingKeyInfo, err := session.routingKeyInfo(context.Background(), fmt.Sprintf("SELECT * FROM %s WHERE second_id=? AND first_id=?", singleTable), time.Second)
+ 	if err != nil {
+ 		t.Fatalf("failed to get routing key info due to error: %v", err)
+ 	}
+@@ -2696,7 +2699,7 @@ func TestRoutingKey(t *testing.T) {
+ 	// verify the cache is working
+ 	routingKeyInfo, err = session.routingKeyInfo(
+ 		context.Background(),
+-		"SELECT * FROM test_single_routing_key WHERE second_id=? AND first_id=?",
++		fmt.Sprintf("SELECT * FROM %s WHERE second_id=? AND first_id=?", singleTable),
+ 		// Routing info will be pulled from cached prepared statement, it should work with minimal timeout
+ 		time.Nanosecond)
+ 	if err != nil {
+@@ -2722,7 +2725,7 @@ func TestRoutingKey(t *testing.T) {
+ 		t.Errorf("Expected cache size to be %d but was %d", initCacheSize+1, cacheSize)
+ 	}
+ 
+-	query := session.Query("SELECT * FROM test_single_routing_key WHERE second_id=? AND first_id=?", 1, 2)
++	query := session.Query(fmt.Sprintf("SELECT * FROM %s WHERE second_id=? AND first_id=?", singleTable), 1, 2)
+ 	routingKey, err := query.GetRoutingKey()
+ 	if err != nil {
+ 		t.Fatalf("Failed to get routing key due to error: %v", err)
+@@ -2734,7 +2737,7 @@ func TestRoutingKey(t *testing.T) {
+ 
+ 	routingKeyInfo, err = session.routingKeyInfo(
+ 		context.Background(),
+-		"SELECT * FROM test_composite_routing_key WHERE second_id=? AND first_id=?",
++		fmt.Sprintf("SELECT * FROM %s WHERE second_id=? AND first_id=?", compositeTable),
+ 		time.Second)
+ 	if err != nil {
+ 		t.Fatalf("failed to get routing key info due to error: %v", err)
+@@ -2767,7 +2770,7 @@ func TestRoutingKey(t *testing.T) {
+ 		t.Fatalf("Expected routing key types[0] to be %v but was %v", TypeInt, routingKeyInfo.types[1].Type())
+ 	}
+ 
+-	query = session.Query("SELECT * FROM test_composite_routing_key WHERE second_id=? AND first_id=?", 1, 2)
++	query = session.Query(fmt.Sprintf("SELECT * FROM %s WHERE second_id=? AND first_id=?", compositeTable), 1, 2)
+ 	routingKey, err = query.GetRoutingKey()
+ 	if err != nil {
+ 		t.Fatalf("Failed to get routing key due to error: %v", err)
+diff --git a/common_test.go b/common_test.go
+index b2b0d752d..4e82c0a7a 100644
+--- a/common_test.go
++++ b/common_test.go
+@@ -198,9 +198,42 @@ func createTable(s *Session, table string) error {
+ 		return err
+ 	}
+ 
++	// Invalidate schema cache to avoid races with debounced schema events.
++	ks := extractKeyspaceFromDDL(table)
++	if ks == "" {
++		ks = s.cfg.Keyspace
++	}
++	if ks != "" {
++		s.metadataDescriber.clearSchema(ks)
++	}
++
+ 	return nil
+ }
+ 
++// extractKeyspaceFromDDL extracts the keyspace name from a DDL statement like
++// "CREATE TABLE gocql_test.table_name (...)". Returns empty string if not found.
++func extractKeyspaceFromDDL(ddl string) string {
++	upper := strings.ToUpper(ddl)
++	idx := strings.Index(upper, "TABLE")
++	if idx < 0 {
++		return ""
++	}
++	rest := strings.TrimSpace(ddl[idx+len("TABLE"):])
++	// Skip optional "IF [NOT] EXISTS" between TABLE and the name.
++	upperRest := strings.ToUpper(rest)
++	if strings.HasPrefix(upperRest, "IF NOT EXISTS") {
++		rest = strings.TrimSpace(rest[len("IF NOT EXISTS"):])
++	} else if strings.HasPrefix(upperRest, "IF EXISTS") {
++		rest = strings.TrimSpace(rest[len("IF EXISTS"):])
++	}
++	// Extract keyspace from keyspace.table
++	dot := strings.Index(rest, ".")
++	if dot < 0 {
++		return ""
++	}
++	return rest[:dot]
++}
++
+ func createCluster(opts ...func(*ClusterConfig)) *ClusterConfig {
+ 	clusterHosts := getClusterHosts()
+ 	cluster := NewCluster(clusterHosts...)
+@@ -413,6 +446,35 @@ func createAggregate(t *testing.T, session *Session) {
+ 	}
+ }
+ 
++const maxCQLIdentifierLen = 48
++
++// testTableName builds a CQL-safe table name from t.Name() and optional parts.
++// Truncates to 48 chars (CQL limit) using <first20>_<last20> when needed.
++func testTableName(t testing.TB, parts ...string) string {
++	name := strings.ToLower(t.Name())
++	for _, p := range parts {
++		name += "_" + strings.ToLower(p)
++	}
++
++	var b strings.Builder
++	prevUnderscore := false
++	for _, r := range name {
++		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
++			b.WriteRune(r)
++			prevUnderscore = false
++		} else if !prevUnderscore {
++			b.WriteByte('_')
++			prevUnderscore = true
++		}
++	}
++	name = strings.Trim(b.String(), "_")
++
++	if len(name) > maxCQLIdentifierLen {
++		name = name[:20] + "_" + name[len(name)-20:]
++	}
++	return name
++}
++
+ func staticAddressTranslator(newAddr net.IP, newPort int) AddressTranslator {
+ 	return AddressTranslatorFunc(func(addr net.IP, port int) (net.IP, int) {
+ 		return newAddr, newPort
