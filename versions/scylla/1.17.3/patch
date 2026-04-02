@@ -1,0 +1,549 @@
+diff --git a/cassandra_test.go b/cassandra_test.go
+index 9ef49637a..fa4ea203f 100644
+--- a/cassandra_test.go
++++ b/cassandra_test.go
+@@ -2661,16 +2661,19 @@ func TestRoutingKey(t *testing.T) {
+ 	session := createSession(t)
+ 	defer session.Close()
+ 
+-	if err := createTable(session, "CREATE TABLE gocql_test.test_single_routing_key (first_id int, second_id int, PRIMARY KEY (first_id, second_id))"); err != nil {
++	singleTable := testTableName(t, "single")
++	compositeTable := testTableName(t, "composite")
++
++	if err := createTable(session, fmt.Sprintf("CREATE TABLE gocql_test.%s (first_id int, second_id int, PRIMARY KEY (first_id, second_id))", singleTable)); err != nil {
+ 		t.Fatalf("failed to create table with error '%v'", err)
+ 	}
+-	if err := createTable(session, "CREATE TABLE gocql_test.test_composite_routing_key (first_id int, second_id int, PRIMARY KEY ((first_id, second_id)))"); err != nil {
++	if err := createTable(session, fmt.Sprintf("CREATE TABLE gocql_test.%s (first_id int, second_id int, PRIMARY KEY ((first_id, second_id)))", compositeTable)); err != nil {
+ 		t.Fatalf("failed to create table with error '%v'", err)
+ 	}
+ 
+ 	initCacheSize := session.routingKeyInfoCache.lru.Len()
+ 
+-	routingKeyInfo, err := session.routingKeyInfo(context.Background(), "SELECT * FROM test_single_routing_key WHERE second_id=? AND first_id=?", time.Second)
++	routingKeyInfo, err := session.routingKeyInfo(context.Background(), fmt.Sprintf("SELECT * FROM %s WHERE second_id=? AND first_id=?", singleTable), time.Second)
+ 	if err != nil {
+ 		t.Fatalf("failed to get routing key info due to error: %v", err)
+ 	}
+@@ -2696,7 +2699,7 @@ func TestRoutingKey(t *testing.T) {
+ 	// verify the cache is working
+ 	routingKeyInfo, err = session.routingKeyInfo(
+ 		context.Background(),
+-		"SELECT * FROM test_single_routing_key WHERE second_id=? AND first_id=?",
++		fmt.Sprintf("SELECT * FROM %s WHERE second_id=? AND first_id=?", singleTable),
+ 		// Routing info will be pulled from cached prepared statement, it should work with minimal timeout
+ 		time.Nanosecond)
+ 	if err != nil {
+@@ -2722,7 +2725,7 @@ func TestRoutingKey(t *testing.T) {
+ 		t.Errorf("Expected cache size to be %d but was %d", initCacheSize+1, cacheSize)
+ 	}
+ 
+-	query := session.Query("SELECT * FROM test_single_routing_key WHERE second_id=? AND first_id=?", 1, 2)
++	query := session.Query(fmt.Sprintf("SELECT * FROM %s WHERE second_id=? AND first_id=?", singleTable), 1, 2)
+ 	routingKey, err := query.GetRoutingKey()
+ 	if err != nil {
+ 		t.Fatalf("Failed to get routing key due to error: %v", err)
+@@ -2734,7 +2737,7 @@ func TestRoutingKey(t *testing.T) {
+ 
+ 	routingKeyInfo, err = session.routingKeyInfo(
+ 		context.Background(),
+-		"SELECT * FROM test_composite_routing_key WHERE second_id=? AND first_id=?",
++		fmt.Sprintf("SELECT * FROM %s WHERE second_id=? AND first_id=?", compositeTable),
+ 		time.Second)
+ 	if err != nil {
+ 		t.Fatalf("failed to get routing key info due to error: %v", err)
+@@ -2767,7 +2770,7 @@ func TestRoutingKey(t *testing.T) {
+ 		t.Fatalf("Expected routing key types[0] to be %v but was %v", TypeInt, routingKeyInfo.types[1].Type())
+ 	}
+ 
+-	query = session.Query("SELECT * FROM test_composite_routing_key WHERE second_id=? AND first_id=?", 1, 2)
++	query = session.Query(fmt.Sprintf("SELECT * FROM %s WHERE second_id=? AND first_id=?", compositeTable), 1, 2)
+ 	routingKey, err = query.GetRoutingKey()
+ 	if err != nil {
+ 		t.Fatalf("Failed to get routing key due to error: %v", err)
+diff --git a/common_test.go b/common_test.go
+index b2b0d752d..4e82c0a7a 100644
+--- a/common_test.go
++++ b/common_test.go
+@@ -198,9 +198,42 @@ func createTable(s *Session, table string) error {
+ 		return err
+ 	}
+ 
++	// Invalidate schema cache to avoid races with debounced schema events.
++	ks := extractKeyspaceFromDDL(table)
++	if ks == "" {
++		ks = s.cfg.Keyspace
++	}
++	if ks != "" {
++		s.metadataDescriber.invalidateKeyspaceSchema(ks)
++	}
++
+ 	return nil
+ }
+ 
++// extractKeyspaceFromDDL extracts the keyspace name from a DDL statement like
++// "CREATE TABLE gocql_test.table_name (...)". Returns empty string if not found.
++func extractKeyspaceFromDDL(ddl string) string {
++	upper := strings.ToUpper(ddl)
++	idx := strings.Index(upper, "TABLE")
++	if idx < 0 {
++		return ""
++	}
++	rest := strings.TrimSpace(ddl[idx+len("TABLE"):])
++	// Skip optional "IF [NOT] EXISTS" between TABLE and the name.
++	upperRest := strings.ToUpper(rest)
++	if strings.HasPrefix(upperRest, "IF NOT EXISTS") {
++		rest = strings.TrimSpace(rest[len("IF NOT EXISTS"):])
++	} else if strings.HasPrefix(upperRest, "IF EXISTS") {
++		rest = strings.TrimSpace(rest[len("IF EXISTS"):])
++	}
++	// Extract keyspace from keyspace.table
++	dot := strings.Index(rest, ".")
++	if dot < 0 {
++		return ""
++	}
++	return rest[:dot]
++}
++
+ func createCluster(opts ...func(*ClusterConfig)) *ClusterConfig {
+ 	clusterHosts := getClusterHosts()
+ 	cluster := NewCluster(clusterHosts...)
+@@ -413,6 +446,35 @@ func createAggregate(t *testing.T, session *Session) {
+ 	}
+ }
+ 
++const maxCQLIdentifierLen = 48
++
++// testTableName builds a CQL-safe table name from t.Name() and optional parts.
++// Truncates to 48 chars (CQL limit) using <first20>_<last20> when needed.
++func testTableName(t testing.TB, parts ...string) string {
++	name := strings.ToLower(t.Name())
++	for _, p := range parts {
++		name += "_" + strings.ToLower(p)
++	}
++
++	var b strings.Builder
++	prevUnderscore := false
++	for _, r := range name {
++		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
++			b.WriteRune(r)
++			prevUnderscore = false
++		} else if !prevUnderscore {
++			b.WriteByte('_')
++			prevUnderscore = true
++		}
++	}
++	name = strings.Trim(b.String(), "_")
++
++	if len(name) > maxCQLIdentifierLen {
++		name = name[:20] + "_" + name[len(name)-20:]
++	}
++	return name
++}
++
+ func staticAddressTranslator(newAddr net.IP, newPort int) AddressTranslator {
+ 	return AddressTranslatorFunc(func(addr net.IP, port int) (net.IP, int) {
+ 		return newAddr, newPort
+diff --git a/scylla_cdc.go b/scylla_cdc.go
+index 812905869..e720a01d8 100644
+--- a/scylla_cdc.go
++++ b/scylla_cdc.go
+@@ -82,16 +82,11 @@ func scyllaIsCdcTable(session *Session, keyspaceName, tableName string) (bool, e
+ 		return false, nil
+ 	}
+ 
+-	// Get the table metadata to see if it has the cdc partitioner set
+-	keyspaceMeta, err := session.KeyspaceMetadata(keyspaceName)
++	// Check if the table has the CDC partitioner set.
++	tableMeta, err := session.TableMetadata(keyspaceName, tableName)
+ 	if err != nil {
+ 		return false, err
+ 	}
+ 
+-	tableMeta, ok := keyspaceMeta.Tables[tableName]
+-	if !ok {
+-		return false, ErrNoMetadata
+-	}
+-
+ 	return tableMeta.Options.Partitioner == scyllaCDCPartitionerFullName, nil
+ }
+diff --git a/session.go b/session.go
+index 53db94f3d..ce6176dc8 100644
+--- a/session.go
++++ b/session.go
+@@ -817,6 +817,14 @@ func (s *Session) routingKeyInfo(ctx context.Context, stmt string, requestTimeou
+ 	table := info.request.table
+ 	keyspace := info.request.keyspace
+ 
++	// Fall back to per-column metadata when FlagGlobalTableSpec is not set.
++	if keyspace == "" && len(info.request.columns) > 0 {
++		keyspace = info.request.columns[0].Keyspace
++	}
++	if table == "" && len(info.request.columns) > 0 {
++		table = info.request.columns[0].Table
++	}
++
+ 	partitioner, err := scyllaGetTablePartitioner(s, keyspace, table)
+ 	if err != nil {
+ 		// don't cache this error
+@@ -844,27 +852,15 @@ func (s *Session) routingKeyInfo(ctx context.Context, stmt string, requestTimeou
+ 		return routingKeyInfo, nil
+ 	}
+ 
+-	// get the table metadata
+-
+-	var keyspaceMetadata *KeyspaceMetadata
+-	keyspaceMetadata, inflight.err = s.KeyspaceMetadata(info.request.columns[0].Keyspace)
++	// get the table metadata (uses TableMetadata to handle cache invalidation)
++	var tableMetadata *TableMetadata
++	tableMetadata, inflight.err = s.TableMetadata(keyspace, table)
+ 	if inflight.err != nil {
+ 		// don't cache this error
+ 		s.routingKeyInfoCache.Remove(stmt)
+ 		return nil, inflight.err
+ 	}
+ 
+-	tableMetadata, found := keyspaceMetadata.Tables[table]
+-	if !found {
+-		// unlikely that the statement could be prepared and the metadata for
+-		// the table couldn't be found, but this may indicate either a bug
+-		// in the metadata code, or that the table was just dropped.
+-		inflight.err = ErrNoMetadata
+-		// don't cache this error
+-		s.routingKeyInfoCache.Remove(stmt)
+-		return nil, inflight.err
+-	}
+-
+ 	partitionKey = tableMetadata.PartitionKey
+ 
+ 	size := len(partitionKey)
+diff --git a/session_unit_test.go b/session_unit_test.go
+index d063fc4f6..921f29415 100644
+--- a/session_unit_test.go
++++ b/session_unit_test.go
+@@ -29,6 +29,7 @@ package gocql
+ 
+ import (
+ 	"context"
++	"strings"
+ 	"testing"
+ )
+ 
+@@ -60,3 +61,317 @@ func TestAsyncSessionInit(t *testing.T) {
+ 		t.Fatalf("unexpected error from void")
+ 	}
+ }
++
++func TestExtractKeyspaceFromDDL(t *testing.T) {
++	t.Parallel()
++
++	tests := []struct {
++		name string
++		ddl  string
++		want string
++	}{
++		{
++			name: "simple_create_table",
++			ddl:  "CREATE TABLE gocql_test.my_table (id int PRIMARY KEY)",
++			want: "gocql_test",
++		},
++		{
++			name: "create_table_if_not_exists",
++			ddl:  "CREATE TABLE IF NOT EXISTS gocql_test.my_table (id int PRIMARY KEY)",
++			want: "gocql_test",
++		},
++		{
++			name: "lowercase_create_table",
++			ddl:  "create table gocql_test.my_table (id int primary key)",
++			want: "gocql_test",
++		},
++		{
++			name: "mixed_case_if_not_exists",
++			ddl:  "Create Table If Not Exists gocql_test.my_table (id int PRIMARY KEY)",
++			want: "gocql_test",
++		},
++		{
++			name: "no_keyspace_prefix",
++			ddl:  "CREATE TABLE my_table (id int PRIMARY KEY)",
++			want: "",
++		},
++		{
++			name: "empty_string",
++			ddl:  "",
++			want: "",
++		},
++		{
++			name: "create_keyspace_ignored",
++			ddl:  "CREATE KEYSPACE my_ks WITH replication = {}",
++			want: "",
++		},
++		{
++			name: "materialized_view_ignored",
++			ddl:  "CREATE MATERIALIZED VIEW my_ks.my_view AS SELECT * FROM my_ks.my_table WHERE id IS NOT NULL PRIMARY KEY (id)",
++			want: "",
++		},
++		{
++			name: "multiline_ddl",
++			ddl:  "CREATE TABLE gocql_test.test_single_routing_key (\n\tfirst_id int,\n\tsecond_id int,\n\tPRIMARY KEY (first_id, second_id)\n)",
++			want: "gocql_test",
++		},
++		{
++			name: "tablets_disabled_keyspace",
++			ddl:  "CREATE TABLE gocql_test_tablets_disabled.my_table (id int PRIMARY KEY)",
++			want: "gocql_test_tablets_disabled",
++		},
++		{
++			name: "drop_table_if_exists",
++			ddl:  "DROP TABLE IF EXISTS gocql_test.my_table",
++			want: "gocql_test",
++		},
++		{
++			name: "drop_table_if_exists_lowercase",
++			ddl:  "drop table if exists gocql_test.my_table",
++			want: "gocql_test",
++		},
++		{
++			name: "drop_table_no_keyspace",
++			ddl:  "DROP TABLE IF EXISTS my_table",
++			want: "",
++		},
++	}
++
++	for _, tt := range tests {
++		t.Run(tt.name, func(t *testing.T) {
++			got := extractKeyspaceFromDDL(tt.ddl)
++			if got != tt.want {
++				t.Errorf("extractKeyspaceFromDDL(%q) = %q, want %q", tt.ddl, got, tt.want)
++			}
++		})
++	}
++}
++
++// TestTableMetadataAfterInvalidation verifies that TableMetadata refreshes
++// after schema invalidation.
++func TestTableMetadataAfterInvalidation(t *testing.T) {
++	t.Parallel()
++
++	ctrl := &schemaDataMock{
++		knownKeyspaces: map[string][]tableInfo{
++			"test_ks": {
++				{name: "tbl_a", columns: []columnInfo{{name: "id", kind: "partition_key", position: 0}}},
++			},
++		},
++	}
++	s := newSchemaEventTestSessionWithMock(ctrl)
++	s.isInitialized = true
++	populateKeyspace(s, "test_ks", "tbl_a")
++
++	// TableMetadata should succeed with cached data
++	tbl, err := s.TableMetadata("test_ks", "tbl_a")
++	if err != nil {
++		t.Fatalf("initial TableMetadata failed: %v", err)
++	}
++	if tbl.Name != "tbl_a" {
++		t.Fatalf("expected table name tbl_a, got %s", tbl.Name)
++	}
++
++	// Simulate a schema change event invalidating the table
++	s.metadataDescriber.invalidateTableSchema("test_ks", "tbl_a")
++
++	ctrl.resetQueries()
++
++	// TableMetadata should still succeed by refreshing the invalidated table
++	tbl, err = s.TableMetadata("test_ks", "tbl_a")
++	if err != nil {
++		t.Fatalf("TableMetadata after invalidation failed: %v", err)
++	}
++	if tbl.Name != "tbl_a" {
++		t.Fatalf("expected table name tbl_a, got %s", tbl.Name)
++	}
++	// Verify that a refresh query was actually issued
++	if ctrl.getQueryCount() == 0 {
++		t.Fatal("expected queries to refresh tbl_a after invalidation")
++	}
++}
++
++// TestTableMetadataAfterKeyspaceInvalidation verifies that TableMetadata
++// works after the entire keyspace cache is cleared.
++func TestTableMetadataAfterKeyspaceInvalidation(t *testing.T) {
++	t.Parallel()
++
++	ctrl := &schemaDataMock{
++		knownKeyspaces: map[string][]tableInfo{
++			"test_ks": {
++				{name: "tbl_a", columns: []columnInfo{{name: "id", kind: "partition_key", position: 0}}},
++			},
++		},
++	}
++	s := newSchemaEventTestSessionWithMock(ctrl)
++	s.isInitialized = true
++	populateKeyspace(s, "test_ks", "tbl_a")
++
++	// TableMetadata should succeed with cached data
++	_, err := s.TableMetadata("test_ks", "tbl_a")
++	if err != nil {
++		t.Fatalf("initial TableMetadata failed: %v", err)
++	}
++
++	// Simulate what createTable now does: invalidate the entire keyspace
++	s.metadataDescriber.invalidateKeyspaceSchema("test_ks")
++
++	ctrl.resetQueries()
++
++	// TableMetadata should still succeed by reloading the keyspace
++	tbl, err := s.TableMetadata("test_ks", "tbl_a")
++	if err != nil {
++		t.Fatalf("TableMetadata after keyspace invalidation failed: %v", err)
++	}
++	if tbl.Name != "tbl_a" {
++		t.Fatalf("expected table name tbl_a, got %s", tbl.Name)
++	}
++	// Verify that a refresh query was issued (keyspace was reloaded)
++	if ctrl.getQueryCount() == 0 {
++		t.Fatal("expected queries to reload keyspace after invalidation")
++	}
++}
++
++// newTestSessionForTableMetadata creates a minimal session suitable for
++// testing TableMetadata/scyllaIsCdcTable paths.
++func newTestSessionForTableMetadata(ctrl *schemaDataMock) *Session {
++	s := newSchemaEventTestSessionWithMock(ctrl)
++	s.isInitialized = true
++	return s
++}
++
++// TestScyllaIsCdcTableAfterInvalidation verifies that scyllaIsCdcTable
++// handles invalidated table metadata.
++func TestScyllaIsCdcTableAfterInvalidation(t *testing.T) {
++	t.Parallel()
++
++	ctrl := &schemaDataMock{
++		knownKeyspaces: map[string][]tableInfo{
++			"test_ks": {
++				{name: "tbl_scylla_cdc_log", columns: []columnInfo{{name: "id", kind: "partition_key", position: 0}}},
++			},
++		},
++	}
++	s := newTestSessionForTableMetadata(ctrl)
++	populateKeyspace(s, "test_ks", "tbl_scylla_cdc_log")
++
++	// Should work with cached data
++	_, err := scyllaIsCdcTable(s, "test_ks", "tbl_scylla_cdc_log")
++	if err != nil {
++		t.Fatalf("initial scyllaIsCdcTable failed: %v", err)
++	}
++
++	// Invalidate the table (simulating a schema change event)
++	s.metadataDescriber.invalidateTableSchema("test_ks", "tbl_scylla_cdc_log")
++	ctrl.resetQueries()
++
++	// Should still succeed by refreshing the metadata
++	_, err = scyllaIsCdcTable(s, "test_ks", "tbl_scylla_cdc_log")
++	if err != nil {
++		t.Fatalf("scyllaIsCdcTable after invalidation failed: %v", err)
++	}
++	if ctrl.getQueryCount() == 0 {
++		t.Fatal("expected queries to refresh tbl_scylla_cdc_log after invalidation")
++	}
++}
++
++// TestScyllaIsCdcTableNotCdcSuffix verifies that scyllaIsCdcTable returns
++// false early for tables without the CDC log suffix.
++func TestScyllaIsCdcTableNotCdcSuffix(t *testing.T) {
++	t.Parallel()
++
++	ctrl := &schemaDataMock{
++		knownKeyspaces: map[string][]tableInfo{
++			"test_ks": {
++				{name: "regular_table", columns: []columnInfo{{name: "id", kind: "partition_key", position: 0}}},
++			},
++		},
++	}
++	s := newTestSessionForTableMetadata(ctrl)
++	populateKeyspace(s, "test_ks", "regular_table")
++
++	isCdc, err := scyllaIsCdcTable(s, "test_ks", "regular_table")
++	if err != nil {
++		t.Fatalf("scyllaIsCdcTable failed: %v", err)
++	}
++	if isCdc {
++		t.Fatal("expected regular_table to not be a CDC table")
++	}
++}
++
++func TestTestTableName(t *testing.T) {
++	t.Parallel()
++
++	tests := []struct {
++		name  string
++		parts []string
++		want  string
++	}{
++		{
++			name: "basic",
++			want: "testtesttablename_basic",
++		},
++		{
++			name:  "with_parts",
++			parts: []string{"single"},
++			want:  "testtesttablename_with_parts_single",
++		},
++		{
++			name:  "multiple_parts",
++			parts: []string{"foo", "bar"},
++			want:  "testtesttablename_multiple_parts_foo_bar",
++		},
++	}
++
++	for _, tt := range tests {
++		t.Run(tt.name, func(t *testing.T) {
++			got := testTableName(t, tt.parts...)
++			if got != tt.want {
++				t.Errorf("testTableName() = %q, want %q", got, tt.want)
++			}
++		})
++	}
++}
++
++func TestTestTableNameSanitizesSpecialChars(t *testing.T) {
++	t.Parallel()
++
++	// t.Name() for subtests contains '/', verify it's sanitized.
++	t.Run("sub/with/slashes", func(t *testing.T) {
++		got := testTableName(t)
++		if strings.Contains(got, "/") {
++			t.Errorf("expected no slashes, got %q", got)
++		}
++		// Consecutive separators from / should be collapsed.
++		if strings.Contains(got, "__") {
++			t.Errorf("expected no consecutive underscores, got %q", got)
++		}
++	})
++}
++
++func TestTestTableNameTruncation(t *testing.T) {
++	t.Parallel()
++
++	// Build a subtest name that forces the result over 48 chars.
++	long := "abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmnopqrstuvwxyz"
++	t.Run(long, func(t *testing.T) {
++		got := testTableName(t, "extra")
++		if len(got) > maxCQLIdentifierLen {
++			t.Errorf("len = %d, want <= %d; value = %q", len(got), maxCQLIdentifierLen, got)
++		}
++		// Should contain chars from both the start and end.
++		if got[:5] != "testt" {
++			t.Errorf("expected prefix from test name, got %q", got)
++		}
++	})
++}
++
++func TestTestTableNameUniqueness(t *testing.T) {
++	t.Parallel()
++
++	a := testTableName(t, "alpha")
++	b := testTableName(t, "beta")
++	if a == b {
++		t.Errorf("expected different names, both got %q", a)
++	}
++}
