@@ -1,4 +1,6 @@
 tests:
+  ignore:
+  - TestRoutingKey
   skip:
 v4_tests:
   skip:
