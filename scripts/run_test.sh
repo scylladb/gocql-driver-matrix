@@ -58,38 +58,50 @@ for gid in $(id -G); do
     group_args+=(--group-add "$gid")
 done
 
-docker_cmd="docker run --detach=true \
-    ${WORKSPACE_MNT} \
-    ${SCYLLA_OPTIONS} \
-    ${DOCKER_CONFIG_MNT} \
-    -v ${GOCQL_MATRIX_DIR}:/gocql-driver-matrix \
-    -v ${GOCQL_DRIVER_DIR}:/gocql \
-    -v ${CCM_DIR}:/scylla-ccm \
-    -e HOME \
-    -e SCYLLA_EXT_OPTS \
-    -e DEV_MODE \
-    -e WORKSPACE \
-    ${BUILD_OPTIONS} \
-    ${JOB_OPTIONS} \
-    ${AWS_OPTIONS} \
-    -w /gocql-driver-matrix \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
-    -v /etc/passwd:/etc/passwd:ro \
-    -v /etc/group:/etc/group:ro \
-    -u $(id -u ${USER}):$(id -g ${USER}) \
-    ${group_args[@]} \
-    --tmpfs ${HOME}/.cache \
-    --tmpfs ${HOME}/.config \
-    --tmpfs ${HOME}/.cassandra \
-    --tmpfs ${HOME}/go \
-    --tmpfs ${HOME}/.local \
-    -v ${HOME}/.ccm:${HOME}/.ccm \
-    --network=host --privileged \
-    ${DOCKER_IMAGE} $*"
+# Build the inline command that runs inside the container.
+# Uses a bash array to avoid eval-based quoting issues: the inline_cmd string
+# is passed as a single argument to 'bash -c', and "$@" properly forwards all
+# script arguments with their original quoting intact.
+inline_cmd="pip install --upgrade pip --quiet && pip install /scylla-ccm && export PATH=\$PATH:\${HOME}/.local/bin && cd /gocql-driver-matrix && python3 main.py /gocql \"\$@\""
 
-echo "Running Docker: $docker_cmd"
-container=$(eval $docker_cmd)
+docker_args=(
+    run --detach=true
+    ${WORKSPACE_MNT}
+    ${SCYLLA_OPTIONS}
+    ${DOCKER_CONFIG_MNT}
+    -v "${GOCQL_MATRIX_DIR}:/gocql-driver-matrix"
+    -v "${GOCQL_DRIVER_DIR}:/gocql"
+    -v "${CCM_DIR}:/scylla-ccm"
+    -e HOME
+    -e SCYLLA_EXT_OPTS
+    -e DEV_MODE
+    -e WORKSPACE
+    ${BUILD_OPTIONS}
+    ${JOB_OPTIONS}
+    ${AWS_OPTIONS}
+    -w /gocql-driver-matrix
+    -v /var/run/docker.sock:/var/run/docker.sock
+    -v /sys/fs/cgroup:/sys/fs/cgroup:ro
+    -v /etc/passwd:/etc/passwd:ro
+    -v /etc/group:/etc/group:ro
+    -u "$(id -u ${USER}):$(id -g ${USER})"
+    "${group_args[@]}"
+    --tmpfs "${HOME}/.cache"
+    --tmpfs "${HOME}/.config"
+    --tmpfs "${HOME}/.cassandra"
+    --tmpfs "${HOME}/go"
+    --tmpfs "${HOME}/.local"
+    -v "${HOME}/.ccm:${HOME}/.ccm"
+    --network=host --privileged
+    --entrypoint /bin/bash
+    "${DOCKER_IMAGE}"
+    -c "${inline_cmd}"
+    --
+    "$@"
+)
+
+echo "Running Docker: docker ${docker_args[*]}"
+container=$(docker "${docker_args[@]}")
 
 
 kill_it() {
@@ -119,4 +131,3 @@ trap - SIGTERM SIGINT SIGHUP EXIT
 [[ -z "$exitcode" ]] && exitcode=1
 
 exit "$exitcode"
-
