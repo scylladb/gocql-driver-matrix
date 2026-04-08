@@ -75,6 +75,11 @@ class TestCluster:
         else:
             return f"-rf={nodes_count} -clusterSize={nodes_count} -cluster={self.ip_addresses} -cluster-socket=../gocql-scylla/ccm/test/node1/cql.m"
 
+    def stop(self):
+        logger.info("Stopping test cluster...")
+        self._cluster.stop()
+        logger.info("test cluster stopped")
+
     def remove(self):
         logger.info("Removing test cluster...")
         self._cluster.remove()

@@ -162,6 +162,10 @@ class Run:
                 skip_tests = f'-skip "{"|".join(self.ignore_tests["skip"]) if self.ignore_tests.get("skip") else ""}"'
                 with TestCluster(self._gocql_driver_git, self._scylla_version, configuration=test_config.cluster_configuration) as cluster:
                     cluster_params = cluster.start()
+                    if test == 'ccm':
+                        # CCM-tagged Go tests manage the cluster lifecycle themselves via ccm start/stop.
+                        # Stop the cluster so the Go test's ccm.StartAll() can start it successfully.
+                        cluster.stop()
                     logging.info("Run tests for tag '%s'", test)
                     cversion = self._cversion if not self._scylla_version else self._scylla_version.split('~')[0]
                     args = f"-gocql.timeout=60s -proto={self._protocol} -autowait=2000ms -compressor=snappy -gocql.cversion={cversion}"
