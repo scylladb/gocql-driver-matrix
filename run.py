@@ -166,6 +166,10 @@ class Run:
                         # CCM-tagged Go tests manage the cluster lifecycle themselves via ccm start/stop.
                         # Stop the cluster so the Go test's ccm.StartAll() can start it successfully.
                         cluster.stop()
+                        # Tell the ccm CLI where to find the cluster that Python created.
+                        # Python ccmlib creates the cluster in driver_directory/ccm, but the ccm CLI
+                        # defaults to ~/.ccm/. Setting CCM_CONFIG_DIR aligns them.
+                        self.environment['CCM_CONFIG_DIR'] = str(self._gocql_driver_git / 'ccm')
                     logging.info("Run tests for tag '%s'", test)
                     cversion = self._cversion if not self._scylla_version else self._scylla_version.split('~')[0]
                     args = f"-gocql.timeout=60s -proto={self._protocol} -autowait=2000ms -compressor=snappy -gocql.cversion={cversion}"
