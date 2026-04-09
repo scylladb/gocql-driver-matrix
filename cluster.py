@@ -40,6 +40,10 @@ class TestCluster:
         logger.info("Preparing test cluster binaries and configuration...")
         self._ip_prefix_lock, ip_prefix = acquire_ip_prefix()
         self._cluster: ccm.ScyllaCluster = ccm.ScyllaCluster(self.cluster_directory, 'test', cassandra_version=version)
+        # Write CURRENT file so the ccm CLI knows which cluster is active.
+        # ccmlib only writes this via switch_cluster() / `ccm switch`, not during cluster creation.
+        # Without it, `ccm start --wait-for-binary-proto` (called by Go ccm tests) fails with exit status 1.
+        (self.cluster_directory / 'CURRENT').write_text('test\n')
         self._cluster.set_ipprefix(ip_prefix)
         cluster_config = {
                 "maintenance_socket": "workdir",
