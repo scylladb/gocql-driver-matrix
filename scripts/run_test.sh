@@ -58,11 +58,17 @@ for gid in $(id -G); do
     group_args+=(--group-add "$gid")
 done
 
+# Patch ccmlib to auto-detect Scylla cluster type in 'ccm add' (no --scylla flag needed).
+# The patch is idempotent: re-running it on an already-patched tree is a no-op.
+# The CCM_DIR is bind-mounted into the container, so patching on the host takes
+# effect inside Docker.
+python3 "${here}/patch_ccmlib.py" "${CCM_DIR}"
+
 # Build the inline command that runs inside the container.
 # Uses a bash array to avoid eval-based quoting issues: the inline_cmd string
 # is passed as a single argument to 'bash -c', and "$@" properly forwards all
 # script arguments with their original quoting intact.
-inline_cmd="pip install --upgrade pip --quiet && pip install /scylla-ccm && export PATH=\$PATH:\${HOME}/.local/bin && cd /gocql-driver-matrix && python3 main.py /gocql \"\$@\""
+inline_cmd="pip install --upgrade pip --quiet && pip install /scylla-ccm && export PATH=\${HOME}/.local/bin:\$PATH && cd /gocql-driver-matrix && python3 main.py /gocql \"\$@\""
 
 docker_args=(
     run --detach=true
@@ -90,7 +96,7 @@ docker_args=(
     --tmpfs "${HOME}/.config"
     --tmpfs "${HOME}/.cassandra"
     --tmpfs "${HOME}/go"
-    --tmpfs "${HOME}/.local"
+    --tmpfs "${HOME}/.local:exec,nosuid,size=2g"
     -v "${HOME}/.ccm:${HOME}/.ccm"
     --network=host --privileged
     --entrypoint /bin/bash
