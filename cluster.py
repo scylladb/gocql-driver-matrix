@@ -1,5 +1,6 @@
 import logging
 import socket
+import time
 from pathlib import Path
 from typing import Dict, Tuple
 
@@ -8,23 +9,79 @@ from ccmlib import scylla_cluster as ccm
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Ports that a running Scylla node binds on its listen address.
+_SCYLLA_PORTS = (9042, 9160, 7000, 7001)
+# Number of nodes populated by default.
+_CLUSTER_NODES = 3
+
+
+def _is_port_bound(ip: str, port: int) -> bool:
+    """Return True if something is actively listening on ip:port."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.settimeout(0.5)
+        try:
+            s.connect((ip, port))
+            return True
+        except OSError:
+            return False
+
+
+def _wait_for_ports_free(ip_prefix: str, timeout: int = 120) -> bool:
+    """Wait until no Scylla ports are bound on any node of the cluster.
+
+    This is necessary because Scylla processes can enter kernel D-state and
+    survive SIGKILL.  We wait for them to release their ports before declaring
+    the IP prefix available for reuse.
+
+    Returns True if all ports are free within *timeout* seconds, False otherwise.
+    """
+    node_ips = [f"{ip_prefix}{i + 1}" for i in range(_CLUSTER_NODES)]
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        still_bound = [
+            (ip, port)
+            for ip in node_ips
+            for port in _SCYLLA_PORTS
+            if _is_port_bound(ip, port)
+        ]
+        if not still_bound:
+            return True
+        logger.warning("Waiting for Scylla ports to be released: %s", still_bound)
+        time.sleep(3)
+    return False
+
 
 def acquire_ip_prefix() -> Tuple[socket.socket, str]:
-    """gets unique ip prefix across whole machine,
-    so it's possible to run tests in parallel.
+    """Gets a machine-unique IP prefix to support parallel tests.
 
-    Returns tuple of lock (socket in that case) and ip prefix, where lock later needs to be released."""
+    Skips any prefix where a Scylla CQL port (9042) is still bound -- this can
+    happen when a previous cluster's processes are stuck in kernel D-state after
+    SIGKILL and have not yet released their ports.
+
+    Returns a tuple of (lock socket, ip prefix).  The caller must close the
+    socket via release_ip_prefix_lock() when the prefix is no longer needed.
+    """
     logger.info("Getting machine-unique ip prefix to support parallel tests...")
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     for index in range(1, 126):
+        ip_prefix = f'127.0.{index}.'
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
-            ip_prefix = f'127.0.{index}.'
-            sock.bind((f'{ip_prefix}1', 48783))  # random port
-            logger.info("Cluster ip prefix acquired: %s", ip_prefix)
-            return sock, ip_prefix
+            sock.bind((f'{ip_prefix}1', 48783))  # arbitrary lock port
         except OSError:
+            sock.close()
             continue
-    raise ValueError(f"Couldn't acquire ip prefix - looks clusters are not cleared properly")
+        # Lock port is free, but a zombie Scylla from a previous run might still
+        # hold the CQL port.  Skip this prefix if that's the case.
+        if any(_is_port_bound(f'{ip_prefix}{i + 1}', 9042) for i in range(_CLUSTER_NODES)):
+            logger.warning(
+                "IP prefix %s: lock port free but Scylla CQL port 9042 still bound; skipping",
+                ip_prefix,
+            )
+            sock.close()
+            continue
+        logger.info("Cluster ip prefix acquired: %s", ip_prefix)
+        return sock, ip_prefix
+    raise ValueError("Couldn't acquire ip prefix - looks clusters are not cleared properly")
 
 
 def release_ip_prefix_lock(sock: socket.socket) -> None:
@@ -38,13 +95,13 @@ class TestCluster:
         self.cluster_directory = driver_directory / "ccm"
         self.cluster_directory.mkdir(parents=True, exist_ok=True)
         logger.info("Preparing test cluster binaries and configuration...")
-        self._ip_prefix_lock, ip_prefix = acquire_ip_prefix()
+        self._ip_prefix_lock, self._ip_prefix = acquire_ip_prefix()
         self._cluster: ccm.ScyllaCluster = ccm.ScyllaCluster(self.cluster_directory, 'test', cassandra_version=version)
         # Write CURRENT file so the ccm CLI knows which cluster is active.
         # ccmlib only writes this via switch_cluster() / `ccm switch`, not during cluster creation.
         # Without it, `ccm start --wait-for-binary-proto` (called by Go ccm tests) fails with exit status 1.
         (self.cluster_directory / 'CURRENT').write_text('test\n')
-        self._cluster.set_ipprefix(ip_prefix)
+        self._cluster.set_ipprefix(self._ip_prefix)
         cluster_config = {
                 "maintenance_socket": "workdir",
                 "experimental_features": ["udf"],
@@ -87,4 +144,12 @@ class TestCluster:
     def remove(self):
         logger.info("Removing test cluster...")
         self._cluster.remove()
-        logger.info("test cluster removed")
+        logger.info("Waiting for Scylla processes to release ports on prefix %s...", self._ip_prefix)
+        if not _wait_for_ports_free(self._ip_prefix):
+            logger.warning(
+                "Scylla processes on prefix %s still holding ports after timeout; "
+                "the next cluster will use a different IP prefix.",
+                self._ip_prefix,
+            )
+        else:
+            logger.info("All Scylla ports on prefix %s are free.", self._ip_prefix)
