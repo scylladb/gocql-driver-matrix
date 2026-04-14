@@ -1,4 +1,11 @@
 tests:
   skip:
+    # Proto v3 only: TOCTOU double-call race in v1.17.3's getTableMetadata —
+    # `session.getConn() == nil || !session.getConn().isScyllaConn()` evaluates
+    # getConn() twice; if the pool changes between calls, the second call can
+    # return nil, causing a nil receiver panic in isScyllaConn(). The fix was
+    # merged to scylladb/gocql master (commit 0210272) after v1.17.3 was tagged.
+    # Only triggers on proto v3 due to schema event timing differences.
+    - TestBatch_Errors
 v4_tests:
   skip:
