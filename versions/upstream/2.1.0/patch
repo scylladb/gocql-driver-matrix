@@ -1,0 +1,397 @@
+diff --git a/batch_test.go b/batch_test.go
+index 57eafd6..a78ad42 100644
+--- a/batch_test.go
++++ b/batch_test.go
+@@ -122,9 +122,9 @@ func TestBatch_SetKeyspace(t *testing.T) {
+ 	const keyspaceStmt = `
+ 		CREATE KEYSPACE IF NOT EXISTS gocql_keyspace_override_test 
+ 		WITH replication = {
+-			'class': 'SimpleStrategy', 
+-			'replication_factor': '1'
+-		};
++			'class': 'NetworkTopologyStrategy', 
++			'datacenter1': '1'
++		} AND tablets = {'enabled': false};
+ `
+ 
+ 	err := session.Query(keyspaceStmt).Exec()
+diff --git a/cassandra_test.go b/cassandra_test.go
+index 2f386c8..060230a 100644
+--- a/cassandra_test.go
++++ b/cassandra_test.go
+@@ -2254,8 +2254,8 @@ func assertGetKeyspaceMetadata(t *testing.T, keyspaceMetadata *KeyspaceMetadata,
+ 	if keyspaceMetadata.Name != "gocql_test" {
+ 		t.Errorf("Expected keyspace name to be 'gocql' but was '%s'", keyspaceMetadata.Name)
+ 	}
+-	if keyspaceMetadata.StrategyClass != "org.apache.cassandra.locator.SimpleStrategy" {
+-		t.Errorf("Expected replication strategy class to be 'org.apache.cassandra.locator.SimpleStrategy' but was '%s'", keyspaceMetadata.StrategyClass)
++	if keyspaceMetadata.StrategyClass != "org.apache.cassandra.locator.NetworkTopologyStrategy" {
++		t.Errorf("Expected replication strategy class to be 'org.apache.cassandra.locator.NetworkTopologyStrategy' but was '%s'", keyspaceMetadata.StrategyClass)
+ 	}
+ 	if keyspaceMetadata.StrategyOptions == nil {
+ 		t.Error("Expected replication strategy options map but was nil")
+@@ -3912,8 +3912,8 @@ func TestQuery_SetKeyspace(t *testing.T) {
+ 	const keyspaceStmt = `
+ 		CREATE KEYSPACE IF NOT EXISTS gocql_query_keyspace_override_test
+ 		WITH replication = {
+-			'class': 'SimpleStrategy',
+-			'replication_factor': '1'
++			'class': 'NetworkTopologyStrategy',
++			'datacenter1': '1'
+ 		};
+ `
+ 
+@@ -4205,9 +4205,9 @@ func TestStmtCacheUsesOverriddenKeyspace(t *testing.T) {
+ 
+ 	const createKeyspaceStmt = `CREATE KEYSPACE IF NOT EXISTS %s
+ 	WITH replication = {
+-		'class' : 'SimpleStrategy',
+-			'replication_factor' : 1
+-	}`
++		'class' : 'NetworkTopologyStrategy',
++			'datacenter1' : 1
++	} AND tablets = {'enabled': false}`
+ 
+ 	err := createTable(session, fmt.Sprintf(createKeyspaceStmt, "gocql_test_stmt_cache"))
+ 	if err != nil {
+@@ -4266,9 +4266,9 @@ func TestRoutingKeyCacheUsesOverriddenKeyspace(t *testing.T) {
+ 
+ 	const createKeyspaceStmt = `CREATE KEYSPACE IF NOT EXISTS %s
+ 	WITH replication = {
+-		'class' : 'SimpleStrategy',
+-			'replication_factor' : 1
+-	}`
++		'class' : 'NetworkTopologyStrategy',
++			'datacenter1' : 1
++	} AND tablets = {'enabled': false}`
+ 
+ 	err := createTable(session, fmt.Sprintf(createKeyspaceStmt, "gocql_test_routing_key_cache"))
+ 	if err != nil {
+diff --git a/common_test.go b/common_test.go
+index 0ae7501..15beff3 100644
+--- a/common_test.go
++++ b/common_test.go
+@@ -161,9 +161,9 @@ func createKeyspaceWithRF(tb testing.TB, cluster *ClusterConfig, keyspace string
+ 
+ 	err = createTable(session, fmt.Sprintf(`CREATE KEYSPACE %s
+ 	WITH replication = {
+-		'class' : 'SimpleStrategy',
+-		'replication_factor' : %d
+-	}`, keyspace, rf))
++		'class' : 'NetworkTopologyStrategy',
++		'datacenter1' : %d
++	} AND tablets = {'enabled': false}`, keyspace, rf))
+ 
+ 	if err != nil {
+ 		panic(fmt.Sprintf("unable to create keyspace: %v", err))
+diff --git a/example_batch_test.go b/example_batch_test.go
+index 2322a3b..36c80b5 100644
+--- a/example_batch_test.go
++++ b/example_batch_test.go
+@@ -35,7 +35,7 @@ import (
+ // Example_batch demonstrates how to execute a batch of statements.
+ func Example_batch() {
+ 	/* The example assumes the following CQL was used to setup the keyspace:
+-	create keyspace example with replication = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };
++	create keyspace example with replication = { 'class' : 'NetworkTopologyStrategy', 'datacenter1' : 1 } AND tablets = {'enabled': false};
+ 	create table example.batches(pk int, ck int, description text, PRIMARY KEY(pk, ck));
+ 	*/
+ 	cluster := gocql.NewCluster("localhost:9042")
+diff --git a/example_dynamic_columns_test.go b/example_dynamic_columns_test.go
+index 38f4c66..f4816aa 100644
+--- a/example_dynamic_columns_test.go
++++ b/example_dynamic_columns_test.go
+@@ -38,7 +38,7 @@ import (
+ // Example_dynamicColumns demonstrates how to handle dynamic column list.
+ func Example_dynamicColumns() {
+ 	/* The example assumes the following CQL was used to setup the keyspace:
+-	create keyspace example with replication = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };
++	create keyspace example with replication = { 'class' : 'NetworkTopologyStrategy', 'datacenter1' : 1 } AND tablets = {'enabled': false};
+ 	create table example.table1(pk text, ck int, value1 text, value2 int, PRIMARY KEY(pk, ck));
+ 	insert into example.table1 (pk, ck, value1, value2) values ('a', 1, 'b', 2);
+ 	insert into example.table1 (pk, ck, value1, value2) values ('c', 3, 'd', 4);
+diff --git a/example_event_listeners_test.go b/example_event_listeners_test.go
+index 942b2d5..f94b37f 100644
+--- a/example_event_listeners_test.go
++++ b/example_event_listeners_test.go
+@@ -201,7 +201,7 @@ func (l *HostStateListener) OnHostDown(event gocql.HostDownEvent) {
+ // (SchemaListenersMux, HostListenersMux, SessionReadyListenersMux).
+ func Example_eventListeners() {
+ 	/* The example assumes the following CQL was used to setup the keyspace:
+-	create keyspace example with replication = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };
++	create keyspace example with replication = { 'class' : 'NetworkTopologyStrategy', 'datacenter1' : 1 } AND tablets = {'enabled': false};
+ 	create table example.events_demo(id int PRIMARY KEY, value text);
+ 	*/
+ 
+@@ -245,7 +245,7 @@ func Example_eventListeners() {
+ 	// Host Listener: Session ready, loading initial host state
+ 	//   Initial host: 127.0.0.1 (id: a1b2c3d4-e5f6-7890-abcd-ef1234567890, datacenter: datacenter1, rack: rack1, state: UP)
+ 	// Schema Listener: Session ready, loading initial schema state
+-	//   Initial keyspace: example (replication: org.apache.cassandra.locator.SimpleStrategy)
++	//   Initial keyspace: example (replication: org.apache.cassandra.locator.NetworkTopologyStrategy)
+ 	//     Initial table: example.events_demo
+ 	//   Initial keyspace: system (replication: org.apache.cassandra.locator.LocalStrategy)
+ 	//     Initial table: system.local
+diff --git a/example_lwt_batch_test.go b/example_lwt_batch_test.go
+index 1d0acad..ec5e09f 100644
+--- a/example_lwt_batch_test.go
++++ b/example_lwt_batch_test.go
+@@ -35,7 +35,7 @@ import (
+ // ExampleBatch_MapExecCAS demonstrates how to execute a batch lightweight transaction.
+ func ExampleBatch_MapExecCAS() {
+ 	/* The example assumes the following CQL was used to setup the keyspace:
+-	create keyspace example with replication = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };
++	create keyspace example with replication = { 'class' : 'NetworkTopologyStrategy', 'datacenter1' : 1 } AND tablets = {'enabled': false};
+ 	create table example.my_lwt_batch_table(pk text, ck text, version int, value text, PRIMARY KEY(pk, ck));
+ 	*/
+ 	cluster := gocql.NewCluster("localhost:9042")
+diff --git a/example_lwt_test.go b/example_lwt_test.go
+index a7aa0a8..0ac1e9a 100644
+--- a/example_lwt_test.go
++++ b/example_lwt_test.go
+@@ -35,7 +35,7 @@ import (
+ // ExampleQuery_MapScanCAS demonstrates how to execute a single-statement lightweight transaction.
+ func ExampleQuery_MapScanCAS() {
+ 	/* The example assumes the following CQL was used to setup the keyspace:
+-	create keyspace example with replication = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };
++	create keyspace example with replication = { 'class' : 'NetworkTopologyStrategy', 'datacenter1' : 1 } AND tablets = {'enabled': false};
+ 	create table example.my_lwt_table(pk int, version int, value text, PRIMARY KEY(pk));
+ 	*/
+ 	cluster := gocql.NewCluster("localhost:9042")
+diff --git a/example_marshaler_test.go b/example_marshaler_test.go
+index 3b6c819..6a6021e 100644
+--- a/example_marshaler_test.go
++++ b/example_marshaler_test.go
+@@ -75,7 +75,7 @@ func (m *MyMarshaler) UnmarshalCQL(info gocql.TypeInfo, data []byte) error {
+ // Example_marshalerUnmarshaler demonstrates how to implement a Marshaler and Unmarshaler.
+ func Example_marshalerUnmarshaler() {
+ 	/* The example assumes the following CQL was used to setup the keyspace:
+-	create keyspace example with replication = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };
++	create keyspace example with replication = { 'class' : 'NetworkTopologyStrategy', 'datacenter1' : 1 } AND tablets = {'enabled': false};
+ 	create table example.my_marshaler_table(pk int, value text, PRIMARY KEY(pk));
+ 	*/
+ 	cluster := gocql.NewCluster("localhost:9042")
+diff --git a/example_nulls_test.go b/example_nulls_test.go
+index 4d0ab16..20b4cf2 100644
+--- a/example_nulls_test.go
++++ b/example_nulls_test.go
+@@ -37,7 +37,7 @@ import (
+ // column being null and empty string, you can unmarshal into *string field.
+ func Example_nulls() {
+ 	/* The example assumes the following CQL was used to setup the keyspace:
+-	create keyspace example with replication = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };
++	create keyspace example with replication = { 'class' : 'NetworkTopologyStrategy', 'datacenter1' : 1 } AND tablets = {'enabled': false};
+ 	create table example.stringvals(id int, value text, PRIMARY KEY(id));
+ 	insert into example.stringvals (id, value) values (1, null);
+ 	insert into example.stringvals (id, value) values (2, '');
+diff --git a/example_paging_test.go b/example_paging_test.go
+index 8e2a123..76bb2a5 100644
+--- a/example_paging_test.go
++++ b/example_paging_test.go
+@@ -36,7 +36,7 @@ import (
+ // See also package documentation about paging.
+ func Example_paging() {
+ 	/* The example assumes the following CQL was used to setup the keyspace:
+-	create keyspace example with replication = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };
++	create keyspace example with replication = { 'class' : 'NetworkTopologyStrategy', 'datacenter1' : 1 } AND tablets = {'enabled': false};
+ 	create table example.itoa(id int, description text, PRIMARY KEY(id));
+ 	insert into example.itoa (id, description) values (1, 'one');
+ 	insert into example.itoa (id, description) values (2, 'two');
+diff --git a/example_set_test.go b/example_set_test.go
+index faf73ea..aa6f4a8 100644
+--- a/example_set_test.go
++++ b/example_set_test.go
+@@ -35,7 +35,7 @@ import (
+ // Example_set demonstrates how to use sets.
+ func Example_set() {
+ 	/* The example assumes the following CQL was used to setup the keyspace:
+-	create keyspace example with replication = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };
++	create keyspace example with replication = { 'class' : 'NetworkTopologyStrategy', 'datacenter1' : 1 } AND tablets = {'enabled': false};
+ 	create table example.sets(id int, value set<text>, PRIMARY KEY(id));
+ 	*/
+ 	cluster := gocql.NewCluster("localhost:9042")
+diff --git a/example_setkeyspace_test.go b/example_setkeyspace_test.go
+index 93b9c1c..946d9e0 100644
+--- a/example_setkeyspace_test.go
++++ b/example_setkeyspace_test.go
+@@ -35,9 +35,9 @@ import (
+ // 3. Default session keyspace - LOWEST precedence
+ func Example_setKeyspace() {
+ 	/* The example assumes the following CQL was used to setup the keyspaces:
+-	create keyspace example with replication = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };
+-	create keyspace example2 with replication = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };
+-	create keyspace example3 with replication = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };
++	create keyspace example with replication = { 'class' : 'NetworkTopologyStrategy', 'datacenter1' : 1 } AND tablets = {'enabled': false};
++	create keyspace example2 with replication = { 'class' : 'NetworkTopologyStrategy', 'datacenter1' : 1 } AND tablets = {'enabled': false};
++	create keyspace example3 with replication = { 'class' : 'NetworkTopologyStrategy', 'datacenter1' : 1 } AND tablets = {'enabled': false};
+ 	create table example.users(id int, name text, PRIMARY KEY(id));
+ 	create table example2.users(id int, name text, PRIMARY KEY(id));
+ 	create table example3.users(id int, name text, PRIMARY KEY(id));
+diff --git a/example_structured_logging_test.go b/example_structured_logging_test.go
+index c5bd366..dcbb227 100644
+--- a/example_structured_logging_test.go
++++ b/example_structured_logging_test.go
+@@ -39,7 +39,7 @@ import (
+ // proper component separation to distinguish between application and driver logs.
+ func Example_structuredLogging() {
+ 	/* The example assumes the following CQL was used to setup the keyspace:
+-	create keyspace example with replication = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };
++	create keyspace example with replication = { 'class' : 'NetworkTopologyStrategy', 'datacenter1' : 1 } AND tablets = {'enabled': false};
+ 	create table example.log_demo(id int, value text, PRIMARY KEY(id));
+ 	*/
+ 
+diff --git a/example_test.go b/example_test.go
+index 9172519..46215a4 100644
+--- a/example_test.go
++++ b/example_test.go
+@@ -34,7 +34,7 @@ import (
+ 
+ func Example() {
+ 	/* The example assumes the following CQL was used to setup the keyspace:
+-	create keyspace example with replication = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };
++	create keyspace example with replication = { 'class' : 'NetworkTopologyStrategy', 'datacenter1' : 1 } AND tablets = {'enabled': false};
+ 	create table example.tweet(timeline text, id UUID, text text, PRIMARY KEY(id));
+ 	create index on example.tweet(timeline);
+ 	*/
+diff --git a/example_udt_map_test.go b/example_udt_map_test.go
+index 03018c3..52a99cf 100644
+--- a/example_udt_map_test.go
++++ b/example_udt_map_test.go
+@@ -36,7 +36,7 @@ import (
+ // See also Example_userDefinedTypesStruct and examples for UDTMarshaler and UDTUnmarshaler if you want to map to structs.
+ func Example_userDefinedTypesMap() {
+ 	/* The example assumes the following CQL was used to setup the keyspace:
+-	create keyspace example with replication = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };
++	create keyspace example with replication = { 'class' : 'NetworkTopologyStrategy', 'datacenter1' : 1 } AND tablets = {'enabled': false};
+ 	create type example.my_udt (field_a text, field_b int);
+ 	create table example.my_udt_table(pk int, value frozen<my_udt>, PRIMARY KEY(pk));
+ 	*/
+diff --git a/example_udt_marshaler_test.go b/example_udt_marshaler_test.go
+index b2dc6ac..b385d8e 100644
+--- a/example_udt_marshaler_test.go
++++ b/example_udt_marshaler_test.go
+@@ -55,7 +55,7 @@ func (m MyUDTMarshaler) MarshalUDT(name string, info gocql.TypeInfo) ([]byte, er
+ // ExampleUDTMarshaler demonstrates how to implement a UDTMarshaler.
+ func ExampleUDTMarshaler() {
+ 	/* The example assumes the following CQL was used to setup the keyspace:
+-	create keyspace example with replication = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };
++	create keyspace example with replication = { 'class' : 'NetworkTopologyStrategy', 'datacenter1' : 1 } AND tablets = {'enabled': false};
+ 	create type example.my_udt (field_a text, field_b int);
+ 	create table example.my_udt_table(pk int, value frozen<my_udt>, PRIMARY KEY(pk));
+ 	*/
+diff --git a/example_udt_struct_test.go b/example_udt_struct_test.go
+index 1bfdc7b..fb23bb2 100644
+--- a/example_udt_struct_test.go
++++ b/example_udt_struct_test.go
+@@ -41,7 +41,7 @@ type MyUDT struct {
+ // See also examples for UDTMarshaler and UDTUnmarshaler if you need more control/better performance.
+ func Example_userDefinedTypesStruct() {
+ 	/* The example assumes the following CQL was used to setup the keyspace:
+-	create keyspace example with replication = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };
++	create keyspace example with replication = { 'class' : 'NetworkTopologyStrategy', 'datacenter1' : 1 } AND tablets = {'enabled': false};
+ 	create type example.my_udt (field_a text, field_b int);
+ 	create table example.my_udt_table(pk int, value frozen<my_udt>, PRIMARY KEY(pk));
+ 	*/
+diff --git a/example_udt_unmarshaler_test.go b/example_udt_unmarshaler_test.go
+index 2db6c61..d0c331f 100644
+--- a/example_udt_unmarshaler_test.go
++++ b/example_udt_unmarshaler_test.go
+@@ -56,7 +56,7 @@ func (m *MyUDTUnmarshaler) UnmarshalUDT(name string, info gocql.TypeInfo, data [
+ // ExampleUDTUnmarshaler demonstrates how to implement a UDTUnmarshaler.
+ func ExampleUDTUnmarshaler() {
+ 	/* The example assumes the following CQL was used to setup the keyspace:
+-	create keyspace example with replication = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };
++	create keyspace example with replication = { 'class' : 'NetworkTopologyStrategy', 'datacenter1' : 1 } AND tablets = {'enabled': false};
+ 	create type example.my_udt (field_a text, field_b int);
+ 	create table example.my_udt_table(pk int, value frozen<my_udt>, PRIMARY KEY(pk));
+ 	insert into example.my_udt_table (pk, value) values (1, {field_a: 'a value', field_b: 42});
+diff --git a/example_vector_test.go b/example_vector_test.go
+index 8e88c32..b7bb6c1 100644
+--- a/example_vector_test.go
++++ b/example_vector_test.go
+@@ -32,7 +32,7 @@ import (
+ // Note: Requires Cassandra 5.0+ and a SAI index on the vector column for ANN search.
+ func Example_vector() {
+ 	/* The example assumes the following CQL was used to setup the keyspace:
+-	create keyspace example with replication = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };
++	create keyspace example with replication = { 'class' : 'NetworkTopologyStrategy', 'datacenter1' : 1 } AND tablets = {'enabled': false};
+ 	create table example.vectors(
+ 		id int,
+ 		item_name text,
+diff --git a/keyspace_table_test.go b/keyspace_table_test.go
+index 7862b48..d3d7a88 100644
+--- a/keyspace_table_test.go
++++ b/keyspace_table_test.go
+@@ -61,9 +61,9 @@ func TestKeyspaceTable(t *testing.T) {
+ 
+ 	err = createTable(session, fmt.Sprintf(`CREATE KEYSPACE %s
+ 	WITH replication = {
+-		'class' : 'SimpleStrategy',
+-		'replication_factor' : 1
+-	}`, keyspace))
++		'class' : 'NetworkTopologyStrategy',
++		'datacenter1' : 1
++	} AND tablets = {'enabled': false}`, keyspace))
+ 
+ 	if err != nil {
+ 		t.Fatal("unable to create keyspace:", err)
+@@ -71,9 +71,9 @@ func TestKeyspaceTable(t *testing.T) {
+ 
+ 	err = createTable(session, fmt.Sprintf(`CREATE KEYSPACE %s
+ 	WITH replication = {
+-		'class' : 'SimpleStrategy',
+-		'replication_factor' : 1
+-	}`, wrongKeyspace))
++		'class' : 'NetworkTopologyStrategy',
++		'datacenter1' : 1
++	} AND tablets = {'enabled': false}`, wrongKeyspace))
+ 
+ 	if err != nil {
+ 		t.Fatal("unable to create keyspace:", err)
+diff --git a/schema_events_test.go b/schema_events_test.go
+index ae9e245..3301f91 100644
+--- a/schema_events_test.go
++++ b/schema_events_test.go
+@@ -211,7 +211,7 @@ func testSchemaEventsKeyspace(t *testing.T, session *Session, listener *schemaCh
+ 
+ 	listener.clear()
+ 
+-	err := session.Query(fmt.Sprintf(`CREATE KEYSPACE %s WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'}`, ks)).Exec()
++	err := session.Query(fmt.Sprintf(`CREATE KEYSPACE %s WITH replication = {'class': 'NetworkTopologyStrategy', 'datacenter1': '1'} AND tablets = {'enabled': false}`, ks)).Exec()
+ 	require.NoError(t, err, "Expected no error creating keyspace")
+ 
+ 	require.Eventually(t, func() bool {
+@@ -220,12 +220,12 @@ func testSchemaEventsKeyspace(t *testing.T, session *Session, listener *schemaCh
+ 
+ 	// Verify that the listener received the keyspace created event
+ 	require.Equal(t, ks, listener.KeyspaceCreatedEvents[0].Keyspace.Name, "Expected keyspace created event to have correct keyspace name")
+-	require.Contains(t, listener.KeyspaceCreatedEvents[0].Keyspace.StrategyClass, "SimpleStrategy", "Expected keyspace created event to have correct replication class")
+-	require.Equal(t, "1", listener.KeyspaceCreatedEvents[0].Keyspace.StrategyOptions["replication_factor"], "Expected keyspace created event to have correct replication factor")
++	require.Contains(t, listener.KeyspaceCreatedEvents[0].Keyspace.StrategyClass, "NetworkTopologyStrategy", "Expected keyspace created event to have correct replication class")
++	require.Equal(t, "1", listener.KeyspaceCreatedEvents[0].Keyspace.StrategyOptions["datacenter1"], "Expected keyspace created event to have correct replication factor")
+ 
+ 	listener.clear()
+ 
+-	err = session.Query(fmt.Sprintf(`ALTER KEYSPACE %s WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '2'}`, ks)).Exec()
++	err = session.Query(fmt.Sprintf(`ALTER KEYSPACE %s WITH replication = {'class': 'NetworkTopologyStrategy', 'datacenter1': '2'}`, ks)).Exec()
+ 	require.NoError(t, err, "Expected no error updating keyspace")
+ 
+ 	// Verify that the listener received the keyspace updated event
+@@ -237,13 +237,13 @@ func testSchemaEventsKeyspace(t *testing.T, session *Session, listener *schemaCh
+ 
+ 	// Old metadata
+ 	require.Equal(t, ks, listener.KeyspaceUpdatedEvents[0].Old.Name, "Expected keyspace updated event to have correct keyspace name")
+-	require.Contains(t, listener.KeyspaceUpdatedEvents[0].Old.StrategyClass, "SimpleStrategy", "Expected keyspace created event to have correct replication class")
+-	require.Equal(t, "1", listener.KeyspaceUpdatedEvents[0].Old.StrategyOptions["replication_factor"], "Expected keyspace updated event to have correct old replication factor")
++	require.Contains(t, listener.KeyspaceUpdatedEvents[0].Old.StrategyClass, "NetworkTopologyStrategy", "Expected keyspace created event to have correct replication class")
++	require.Equal(t, "1", listener.KeyspaceUpdatedEvents[0].Old.StrategyOptions["datacenter1"], "Expected keyspace updated event to have correct old replication factor")
+ 
+ 	// New metadata
+ 	require.Equal(t, ks, listener.KeyspaceUpdatedEvents[0].New.Name, "Expected keyspace updated event to have correct keyspace name")
+-	require.Contains(t, listener.KeyspaceUpdatedEvents[0].New.StrategyClass, "SimpleStrategy", "Expected keyspace updated event to have correct replication class")
+-	require.Equal(t, "2", listener.KeyspaceUpdatedEvents[0].New.StrategyOptions["replication_factor"], "Expected keyspace updated event to have correct new replication factor")
++	require.Contains(t, listener.KeyspaceUpdatedEvents[0].New.StrategyClass, "NetworkTopologyStrategy", "Expected keyspace updated event to have correct replication class")
++	require.Equal(t, "2", listener.KeyspaceUpdatedEvents[0].New.StrategyOptions["datacenter1"], "Expected keyspace updated event to have correct new replication factor")
+ 
+ 	time.Sleep(2 * time.Second)
+ 
