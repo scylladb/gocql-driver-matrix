@@ -4,6 +4,7 @@ tests:
     # Proto v3 only: Scylla 2025.1 can reject TRUNCATE during concurrent
     # topology work with "Another global topology request is ongoing".
     - TestSliceMapMapScanCollectionTypes
+    - TestSliceMapMapScanTupleTypes
 v4_tests:
   skip:
   flaky:
