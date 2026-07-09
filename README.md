@@ -33,19 +33,20 @@ All repositories should be under the **same base folder**
     * Regardless if this is Scylla or Upstream driver (script automatically discovers based on git origin source):
       ```bash
       # Run all standard tests on latest gocql tag (--versions 1)
-      python3 main.py ../gocql-upstream --tests integration --versions 1 --protocols 3,4 --scylla-version release:5.2.4
+      python3 main.py ../gocql-upstream --tests integration auth --versions 1 --protocols 3,4 --scylla-version release:5.2.4
 
       # Run all standard tests with specific gocql tag (--versions 1.8.0)
-      python3 main.py ../gocql-scylla --tests integration --versions v1.8.0 --protocols 3,4 --scylla-version release:5.2.4
+      python3 main.py ../gocql-scylla --tests integration auth --versions v1.8.0 --protocols 3,4 --scylla-version release:5.2.4
       ```
 
 ## Running locally with docker
 ```bash
 export GOCQL_DRIVER_DIR=`pwd`/../gocql-scylla
-scripts/run_test.sh --tests integration --versions 1 --protocols 3 --scylla-version release:5.2.4
+scripts/run_test.sh --tests integration auth --versions 1 --protocols 3 --scylla-version release:5.2.4
 
 ```
 
 ## Available tests:
 * integration
+* auth
 * ccm

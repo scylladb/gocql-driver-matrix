@@ -25,7 +25,7 @@ on:
         description: Optional test selector passed through to the runner.
         required: false
         type: string
-        default: "integration"
+        default: "integration auth"
       protocols:
         description: Optional protocol list passed through to the runner.
         required: false
@@ -209,7 +209,8 @@ jobs:
           versions="${DRIVER_REF:-1}"
           args=(./scripts/run_test.sh --versions "$versions" --protocols "$PROTOCOLS" --scylla-version "$SCYLLA_VERSION")
           if [ -n "$TESTS" ]; then
-            args+=(--tests "$TESTS")
+            read -r -a test_args <<< "$TESTS"
+            args+=(--tests "${test_args[@]}")
           fi
           "${args[@]}"
 

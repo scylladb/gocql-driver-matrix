@@ -18,11 +18,20 @@ def test_runner_changes_include_shell_wrapper_entrypoint_and_workflows():
         "scripts/image",
         ".github/workflows/integration-tests.yml",
         ".github/workflows/pr-integration-tests.yml",
+        "configurations.py",
         "main.py",
     ]:
         outputs = detect_changes([changed_file], repo_root=REPO_ROOT)
 
         assert outputs["runner_changed"] == "true", changed_file
+
+
+def test_integration_workflow_runs_auth_by_default_and_splits_test_args():
+    workflow = (REPO_ROOT / ".github/workflows/integration-tests.yml").read_text(encoding="utf-8")
+
+    assert 'default: "integration auth"' in workflow
+    assert 'read -r -a test_args <<< "$TESTS"' in workflow
+    assert 'args+=(--tests "${test_args[@]}")' in workflow
 
 
 def test_changed_scylla_version_expands_to_driver_matrix_entry():
