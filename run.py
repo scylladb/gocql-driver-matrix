@@ -94,6 +94,11 @@ class Run:
         result["SCYLLA_VERSION"] = self._scylla_version
         return result
 
+    def _gocql_cversion(self) -> str:
+        if not self._scylla_version:
+            return self._cversion
+        return self._scylla_version.split("~", maxsplit=1)[0].removeprefix("release:")
+
     def _run_command_in_shell(self, cmd: str):
         logging.debug("Execute the cmd '%s'", cmd)
         with subprocess.Popen(cmd, shell=True, executable="/bin/bash", env=self.environment,
@@ -178,7 +183,7 @@ class Run:
                         if local_bin not in current_path.split(os.pathsep):
                             self.environment['PATH'] = local_bin + os.pathsep + current_path
                     logging.info("Run tests for tag '%s'", test)
-                    cversion = self._cversion if not self._scylla_version else self._scylla_version.split('~')[0]
+                    cversion = self._gocql_cversion()
                     args = f"-gocql.timeout=60s -proto={self._protocol} -autowait=2000ms -compressor=snappy -gocql.cversion={cversion}"
                     if self._driver_type == 'scylla' and Version(self._full_driver_version.lstrip('v')) >= Version('1.16.1'):
                         args += " -distribution=scylla"
