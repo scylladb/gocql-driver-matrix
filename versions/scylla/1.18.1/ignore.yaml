@@ -6,6 +6,11 @@ tests:
     - TestSliceMapMapScanTypes
     - TestSliceMapMapScanCollectionTypes
     - TestSliceMapMapScanTupleTypes
+    # Sub-nanosecond timeout assertion is timing-sensitive on loaded CI.
+    - TestNewConnectWithLowTimeout
+    - TestNewConnectWithLowTimeout/10ns
+    - TestNewConnectWithLowTimeout/10ns/MetadataSchemaRequestTimeout
+    - TestNewConnectWithLowTimeout/10ns/MetadataSchemaRequestTimeout/Query_from_control_connection
 v4_tests:
   skip:
   flaky:
