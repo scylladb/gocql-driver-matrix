@@ -168,3 +168,17 @@ index af15d50..cec703b 100644
  	// Find the shard without a connection
  	// It's important to start counting from 1 here because we want
  	// to consider the next shard after the previously attempted one
+
+diff --git a/common_test.go b/common_test.go
+index e32244d..30c5b21 100644
+--- a/common_test.go
++++ b/common_test.go
+@@ -66,7 +66,7 @@ func init() {
+ 
+ func TestMain(m *testing.M) {
+ 	flag.Parse()
+-	if integrationTestSetup != nil {
++	if integrationTestSetup != nil && !*flagRunAuthTest {
+ 		integrationTestSetup()
+ 	}
+ 	os.Exit(m.Run())

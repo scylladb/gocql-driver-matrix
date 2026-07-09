@@ -89,8 +89,8 @@ def get_arguments() -> argparse.Namespace:
                         help="gocql-driver versions to test\n"
                              "The value can be number or str with comma (example: 'v1.8.0,v1.7.3').\n"
                              "default=2 - take the two latest driver's tags.")
-    parser.add_argument('--tests', default='integration',
-                        help='"tags" to pass to go test command, default=integration', nargs='+', choices=['integration', 'ccm'])
+    parser.add_argument('--tests', default=['integration', 'auth'],
+                        help='"tags" to pass to go test command, default=integration auth', nargs='+', choices=['integration', 'auth', 'ccm'])
     parser.add_argument('--protocols', default=default_protocols,
                         help='cqlsh native protocol, default={}'.format(','.join(default_protocols)))
     parser.add_argument('--scylla-version', help="relocatable scylla version to use",
