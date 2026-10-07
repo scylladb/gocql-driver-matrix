@@ -16,6 +16,11 @@ on:
         required: false
         type: string
         default: ""
+      driver_version:
+        description: Version used for patches and reports when driver_ref is an untagged commit.
+        required: false
+        type: string
+        default: ""
       scylla_version:
         description: Scylla version or alias to test. Supported aliases are LATEST, PRIOR, LTS-LATEST, and LTS-PRIOR. When empty, LATEST is used.
         required: false
@@ -46,8 +51,18 @@ jobs:
       GOCQL_DRIVER_DIR: ${{ github.workspace }}/driver
     steps:
       - name: Checkout matrix
+        if: ${{ github.repository == 'scylladb/gocql-driver-matrix' }}
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Checkout matrix for external caller
+        if: ${{ github.repository != 'scylladb/gocql-driver-matrix' }}
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          repository: scylladb/gocql-driver-matrix
+          ref: master
           fetch-depth: 0
           persist-credentials: false
 
@@ -201,13 +216,21 @@ jobs:
       - name: Run integration tests
         env:
           DRIVER_REF: ${{ steps.resolve.outputs.driver_ref }}
+          DRIVER_VERSION: ${{ inputs.driver_version }}
           PROTOCOLS: ${{ inputs.protocols }}
           SCYLLA_VERSION: ${{ steps.resolve.outputs.scylla_version }}
           TESTS: ${{ inputs.tests }}
         run: |
           set -euo pipefail
-          versions="${DRIVER_REF:-1}"
-          args=(./scripts/run_test.sh --versions "$versions" --protocols "$PROTOCOLS" --scylla-version "$SCYLLA_VERSION")
+          args=(./scripts/run_test.sh --protocols "$PROTOCOLS" --scylla-version "$SCYLLA_VERSION")
+          if [ -n "$DRIVER_REF" ]; then
+            args+=(--checkout-ref "$DRIVER_REF")
+          fi
+          if [ -n "$DRIVER_VERSION" ]; then
+            args+=(--driver-version "$DRIVER_VERSION")
+          else
+            args+=(--versions "${DRIVER_REF:-1}")
+          fi
           if [ -n "$TESTS" ]; then
             read -r -a test_args <<< "$TESTS"
             args+=(--tests "${test_args[@]}")

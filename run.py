@@ -17,7 +17,7 @@ from processjunit import ProcessJUnit
 
 
 class Run:
-    def __init__(self, gocql_driver_git, driver_type, tag, tests, scylla_version, protocol):
+    def __init__(self, gocql_driver_git, driver_type, tag, tests, scylla_version, protocol, checkout_ref=None):
         self.driver_version = tag
         self._full_driver_version = tag
         self._gocql_driver_git = Path(gocql_driver_git)
@@ -26,6 +26,7 @@ class Run:
         self._driver_type = driver_type
         self._cversion = "3.11.4"
         self._test_tags = tests
+        self._checkout_ref = checkout_ref
 
     @cached_property
     def version_folder(self) -> Path:
@@ -131,14 +132,12 @@ class Run:
         return True
 
     def _checkout_branch(self):
-        try:
-            self._run_command_in_shell("git checkout .")
-            logging.info("git checkout to '%s' tag branch", self._full_driver_version)
-            self._run_command_in_shell(f"git checkout tags/{self._full_driver_version}")
-            return True
-        except Exception as exc:
-            logging.error("Failed to branch for version '%s', with: '%s'", self.driver_version, str(exc))
-            return False
+        self._run_command_in_shell("git checkout .")
+        ref = self._checkout_ref or f"tags/{self._full_driver_version}"
+        logging.info("git checkout to '%s'", ref)
+        subprocess.run(["git", "checkout", "--detach", ref], cwd=self._gocql_driver_git,
+                       env=self.environment, check=True, capture_output=True)
+        return True
 
     def create_metadata_for_failure(self, reason: str) -> None:
         metadata_file = self.xunit_dir / self.metadata_file_name
@@ -193,7 +192,7 @@ class Run:
                     logging.info("Run tests for tag '%s'", test)
                     cversion = self._gocql_cversion()
                     args = f"-gocql.timeout=60s -proto={self._protocol} -autowait=2000ms -compressor=snappy -gocql.cversion={cversion}"
-                    if self._driver_type == 'scylla' and Version(self._full_driver_version.lstrip('v')) >= Version('1.16.1'):
+                    if self._driver_type == 'scylla' and Version(self.driver_version.lstrip('v')) >= Version('1.16.1'):
                         args += " -distribution=scylla"
                     go_test_cmd = f'go test -v {test_config.test_command_args} {cluster_params} {skip_tests} {args} ./...  2>&1 | go-junit-report -iocopy -out {self.xunit_file}_part_{idx}'
                     logging.info("Running the command '%s'", go_test_cmd)

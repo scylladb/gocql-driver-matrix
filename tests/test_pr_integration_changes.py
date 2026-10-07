@@ -17,6 +17,7 @@ def test_runner_changes_include_shell_wrapper_entrypoint_and_workflows():
         "scripts/entrypoint.sh",
         "scripts/image",
         ".github/workflows/integration-tests.yml",
+        ".github/workflows/driver-integration-matrix.yml",
         ".github/workflows/pr-integration-tests.yml",
         "configurations.py",
         "main.py",
@@ -62,6 +63,30 @@ def test_changed_upstream_version_expands_to_driver_matrix_entry():
             "driver_ref": "v1.5.2",
         }
     ]
+
+
+def test_candidate_ref_expands_to_four_scylla_targets(tmp_path):
+    candidate = tmp_path / "versions" / "scylla" / "1.20.1"
+    candidate.mkdir(parents=True)
+    (candidate / "checkout-ref").write_text("candidate-commit\n")
+
+    outputs = detect_changes(["versions/scylla/1.20.1/checkout-ref"], repo_root=tmp_path)
+    entries = json.loads(outputs["version_matrix"])["include"]
+
+    assert outputs["version_count"] == "4"
+    assert [entry["scylla_version"] for entry in entries] == ["LATEST", "PRIOR", "LTS-LATEST", "LTS-PRIOR"]
+    assert all(entry["driver_ref"] == "candidate-commit" and entry["driver_version"] == "1.20.1" for entry in entries)
+
+
+def test_shared_matrix_uses_same_five_lanes_for_pr_and_release():
+    workflow = (REPO_ROOT / ".github/workflows/driver-integration-matrix.yml").read_text(encoding="utf-8")
+    pr_workflow = (REPO_ROOT / ".github/workflows/pr-integration-tests.yml").read_text(encoding="utf-8")
+
+    assert "uses: ./.github/workflows/driver-integration-matrix.yml" in pr_workflow
+    assert "uses: $/.github/workflows/integration-tests.yml" in workflow
+    assert "driver_repository: gocql/gocql" in workflow
+    assert "driver_repository: scylladb/gocql" in workflow
+    assert "scylla_version: [LATEST, PRIOR, LTS-LATEST, LTS-PRIOR]" in workflow
 
 
 def test_image_source_changes_require_scripts_image_update():
