@@ -1,0 +1,51 @@
+name: Go Driver Integration Matrix
+
+on:
+  workflow_call:
+    inputs:
+      run_upstream:
+        description: Run upstream gocql against Scylla LATEST.
+        required: false
+        type: boolean
+        default: true
+      run_scylla:
+        description: Run Scylla gocql against all four Scylla targets.
+        required: false
+        type: boolean
+        default: true
+      driver_ref:
+        description: Scylla driver commit SHA to test; latest tag when empty.
+        required: false
+        type: string
+        default: ""
+      driver_version:
+        description: Version used for Scylla driver patches and reports; latest tag when empty.
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  upstream-integration-tests:
+    if: ${{ inputs.run_upstream }}
+    uses: $/.github/workflows/integration-tests.yml
+    with:
+      driver_repository: gocql/gocql
+      driver_type: upstream
+      scylla_version: LATEST
+
+  scylla-integration-tests:
+    if: ${{ inputs.run_scylla }}
+    strategy:
+      fail-fast: false
+      matrix:
+        scylla_version: [LATEST, PRIOR, LTS-LATEST, LTS-PRIOR]
+    uses: $/.github/workflows/integration-tests.yml
+    with:
+      driver_repository: scylladb/gocql
+      driver_type: scylla
+      driver_ref: ${{ inputs.driver_ref }}
+      driver_version: ${{ inputs.driver_version }}
+      scylla_version: ${{ matrix.scylla_version }}

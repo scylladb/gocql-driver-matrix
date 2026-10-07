@@ -1,5 +1,37 @@
 # Gocql Driver Matrix
 
+## Pre-release integration gate
+
+The reusable `.github/workflows/driver-integration-matrix.yml` runs the same five
+lanes as PR CI: upstream gocql against Scylla `LATEST`, and Scylla gocql against
+`LATEST`, `PRIOR`, `LTS-LATEST`, and `LTS-PRIOR`. Set `run_upstream` or
+`run_scylla` to `false` to select one driver group.
+
+The [Scylla Go driver's release workflow](https://github.com/scylladb/gocql/blob/master/.github/workflows/release.yml)
+already resolves the release target in `preflight`. Add this job and include it in
+the `publication-gate` dependency list:
+
+```yaml
+  pre-release-integration:
+    name: Driver compatibility matrix
+    needs: preflight
+    uses: scylladb/gocql-driver-matrix/.github/workflows/driver-integration-matrix.yml@master
+    with:
+      driver_ref: ${{ needs.preflight.outputs.resolved_sha }}
+      driver_version: ${{ inputs.version }}
+
+  publication-gate:
+    needs: [preflight, build, integration, pre-release-integration]
+    # Existing publication-gate configuration follows.
+```
+
+This blocks publication when a matrix lane fails. The release caller uses matrix
+`master` for its runner and patches. For an untagged candidate, add a
+`versions/scylla/<version>/` directory with its patch and ignore list when the
+previous version's files do not apply. A `checkout-ref` file in that directory
+can point PR validation at the candidate commit or branch; PR CI then runs all
+four Scylla lanes. Remove `checkout-ref` after the release tag exists.
+
 ## Prerequisites
 * Python3.10
 * pip

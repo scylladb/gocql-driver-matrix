@@ -2,6 +2,7 @@ import sys
 import argparse
 import logging
 import os
+import re
 import subprocess
 from typing import List
 import traceback
@@ -24,7 +25,8 @@ def main(arguments: argparse.Namespace):
                              tag=driver_version,
                              protocol=protocol,
                              tests=arguments.tests,
-                             scylla_version=arguments.scylla_version
+                             scylla_version=arguments.scylla_version,
+                             checkout_ref=arguments.checkout_ref,
                              )
             try:
                 result = runner.run()
@@ -89,6 +91,10 @@ def get_arguments() -> argparse.Namespace:
                         help="gocql-driver versions to test\n"
                              "The value can be number or str with comma (example: 'v1.8.0,v1.7.3').\n"
                              "default=2 - take the two latest driver's tags.")
+    parser.add_argument('--checkout-ref', default=None,
+                        help='Driver git ref to test instead of checking out a version tag.')
+    parser.add_argument('--driver-version', default=None,
+                        help='Version used for patches and reports with --checkout-ref.')
     parser.add_argument('--tests', default=['integration', 'auth'],
                         help='"tags" to pass to go test command, default=integration auth', nargs='+', choices=['integration', 'auth', 'ccm'])
     parser.add_argument('--protocols', default=default_protocols,
@@ -97,10 +103,15 @@ def get_arguments() -> argparse.Namespace:
                         default=os.environ.get('SCYLLA_VERSION', None)),
     parser.add_argument('--recipients', help="whom to send mail at the end of the run",  nargs='+', default=None)
     arguments = parser.parse_args()
+    if arguments.driver_version and not arguments.checkout_ref:
+        parser.error('--driver-version requires --checkout-ref')
+    if (arguments.checkout_ref and not arguments.driver_version
+            and not re.fullmatch(r'v?\d+\.\d+\.\d+', arguments.checkout_ref)):
+        parser.error('--driver-version is required for an untagged --checkout-ref')
     if not arguments.scylla_version:
         logging.error("Error: --scylla-version is required if SCYLLA_VERSION is not set in the environment.")
         sys.exit(1)
-    driver_versions = str(arguments.versions).replace(" ", "")
+    driver_versions = str(arguments.driver_version or arguments.versions).replace(" ", "")
     if driver_versions.isdigit():
         arguments.versions = extract_n_latest_repo_tags(
             repo_directory=arguments.gocql_driver_git,
