@@ -1,4 +1,4 @@
-# Gocql Driver Matrix
+# GoCQL Driver Matrix
 
 ## Pre-release integration gate
 
@@ -7,7 +7,7 @@ lanes as PR CI: upstream gocql against Scylla `LATEST`, and Scylla gocql against
 `LATEST`, `PRIOR`, `LTS-LATEST`, and `LTS-PRIOR`. Set `run_upstream` or
 `run_scylla` to `false` to select one driver group.
 
-The [Scylla Go driver's release workflow](https://github.com/scylladb/gocql/blob/master/.github/workflows/release.yml)
+The [Scylla GoCQL driver's release workflow](https://github.com/scylladb/gocql/blob/master/.github/workflows/release.yml)
 already resolves the release target in `preflight`. Add this job and include it in
 the `publication-gate` dependency list:
 
