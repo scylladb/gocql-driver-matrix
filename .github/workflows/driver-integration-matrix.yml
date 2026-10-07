@@ -1,4 +1,4 @@
-name: Go Driver Integration Matrix
+name: GoCQL Driver Integration Matrix
 
 on:
   workflow_call:
