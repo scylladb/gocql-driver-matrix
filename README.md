@@ -32,6 +32,20 @@ previous version's files do not apply. A `checkout-ref` file in that directory
 can point PR validation at the candidate commit or branch; PR CI then runs all
 four Scylla lanes. Remove `checkout-ref` after the release tag exists.
 
+### GoCQL v2
+
+The runner recognizes the Scylla driver's v2 module (`github.com/scylladb/gocql/v2`
+in the tested ref's `go.mod`) and then:
+
+* runs the integration suite in `./tests/integration` instead of `./...`;
+* runs protocol 4 only and skips the other requested protocols, since the suite
+  is built for ScyllaDB on protocol 4; a run that requests no protocol 4 fails;
+* runs `TestSession/Connect/Authentication` in the `auth` lane, v2's counterpart
+  of `TestAuthentication`.
+
+Version folders never apply across major versions, so a v2 candidate uses the
+newest `versions/scylla/2.*` folder at or below its version, never a 1.x patch.
+
 ## Prerequisites
 * Python3.10
 * pip

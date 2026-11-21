@@ -1,0 +1,9 @@
+# gocql v2 (module github.com/scylladb/gocql/v2). Its integration suite runs
+# against ScyllaDB on native protocol 4 only, so only v4_tests applies: the
+# runner skips the other protocols for v2.
+#
+# Tests that ScyllaDB 2025.1 (LTS-PRIOR) cannot run skip themselves; see
+# docs/flaky-tests.md in the driver.
+v4_tests:
+  skip:
+  flaky:

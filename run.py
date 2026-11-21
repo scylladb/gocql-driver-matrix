@@ -15,6 +15,11 @@ from cluster import TestCluster
 from configurations import test_config_map, TestConfiguration
 from processjunit import ProcessJUnit
 
+# gocql v2 (module github.com/scylladb/gocql/v2) has its integration suite in this
+# package, built for ScyllaDB on native protocol 4 (it refuses any other -proto).
+V2_INTEGRATION_PACKAGE = "./tests/integration"
+V2_PROTOCOLS = (4,)
+
 
 class Run:
     def __init__(self, gocql_driver_git, driver_type, tag, tests, scylla_version, protocol, checkout_ref=None):
@@ -30,7 +35,6 @@ class Run:
 
     @cached_property
     def version_folder(self) -> Path:
-        version_pattern = re.compile(r"([\d]+.[\d]+.[\d]+)$")
         target_version_folder = Path(os.path.dirname(__file__)) / "versions" / self._driver_type
         try:
             target_version = Version(self.driver_version)
@@ -40,16 +44,21 @@ class Run:
                 return target_dir
             return target_version_folder / "master"
 
-        tags_defined = sorted(
-            (
-                Version(folder_path.name)
-                for folder_path in target_version_folder.iterdir() if version_pattern.match(folder_path.name)
-            ),
-            reverse=True
-        )
-        for tag in tags_defined:
+        # A folder is named after a release ("1.19.0") or a pre-release ("2.0.0-rc.1").
+        # Patches and ignore lists never carry over to another major version:
+        # each major version is its own Go module.
+        folders_defined = []
+        for folder_path in target_version_folder.iterdir():
+            try:
+                folder_version = Version(folder_path.name)
+            except InvalidVersion:
+                continue
+            if folder_version.major == target_version.major:
+                folders_defined.append((folder_version, folder_path))
+        folders_defined.sort(reverse=True)
+        for tag, folder_path in folders_defined:
             if tag <= target_version:
-                return target_version_folder / str(tag)
+                return folder_path
         else:
             raise ValueError("Not found directory for gocql-driver version '%s'", self.driver_version)
 
@@ -133,9 +142,8 @@ class Run:
 
     def _checkout_branch(self):
         self._run_command_in_shell("git checkout .")
-        ref = self._checkout_ref or f"tags/{self._full_driver_version}"
-        logging.info("git checkout to '%s'", ref)
-        subprocess.run(["git", "checkout", "--detach", ref], cwd=self._gocql_driver_git,
+        logging.info("git checkout to '%s'", self._ref)
+        subprocess.run(["git", "checkout", "--detach", self._ref], cwd=self._gocql_driver_git,
                        env=self.environment, check=True, capture_output=True)
         return True
 
@@ -162,6 +170,10 @@ class Run:
         os.chdir(self._gocql_driver_git)
         if self._checkout_branch() and self._apply_patch_files():
             driver_module = self._get_driver_module()
+            # go-junit-report names a test suite after its package.
+            test_suite = driver_module
+            if self.is_scylla_v2:
+                test_suite = f"{driver_module}/{V2_INTEGRATION_PACKAGE.removeprefix('./')}"
             for idx, test in enumerate(self._test_tags):
                 test_config: TestConfiguration = test_config_map[test]
                 skip_tests = f'-skip "{"|".join(self.ignore_tests["skip"]) if self.ignore_tests.get("skip") else ""}"'
@@ -194,16 +206,54 @@ class Run:
                     args = f"-gocql.timeout=60s -proto={self._protocol} -autowait=2000ms -compressor=snappy -gocql.cversion={cversion}"
                     if self._driver_type == 'scylla' and Version(self.driver_version.lstrip('v')) >= Version('1.16.1'):
                         args += " -distribution=scylla"
-                    go_test_cmd = f'go test -v {test_config.test_command_args} {cluster_params} {skip_tests} {args} ./...  2>&1 | go-junit-report -iocopy -out {self.xunit_file}_part_{idx}'
+                    if self.is_scylla_v2:
+                        # gocql v2 keeps its integration suite in one package; the
+                        # suite's flags are undefined in every other test binary.
+                        # The package goes first: go test hands everything after
+                        # the first flag it does not know (-runauth, -rf, ...) to
+                        # the test binary and tests the current directory instead.
+                        test_command_args = test_config.v2_test_command_args or test_config.test_command_args
+                        go_test_cmd = (f'go test -v {V2_INTEGRATION_PACKAGE} {test_command_args} {skip_tests} '
+                                       f'{cluster_params} {args}')
+                    else:
+                        go_test_cmd = f'go test -v {test_config.test_command_args} {cluster_params} {skip_tests} {args} ./...'
+                    go_test_cmd += f'  2>&1 | go-junit-report -iocopy -out {self.xunit_file}_part_{idx}'
                     logging.info("Running the command '%s'", go_test_cmd)
                     subprocess.call(f"{go_test_cmd}", shell=True, executable="/bin/bash",
                                     env=self.environment, cwd=self._gocql_driver_git)
             junit.save_after_analysis(driver_version=self.driver_version, protocol=self._protocol,
-                                      gocql_driver_type=self._driver_type, driver_module=driver_module)
+                                      gocql_driver_type=self._driver_type, driver_module=test_suite)
             metadata_file.write_text(json.dumps(metadata))
         return junit
    
     
+    @property
+    def _ref(self) -> str:
+        return self._checkout_ref or f"tags/{self._full_driver_version}"
+
+    @cached_property
+    def is_scylla_v2(self) -> bool:
+        """
+        Whether the ref to test is the Scylla driver's v2 module (github.com/scylladb/gocql/v2).
+
+        Read from the ref's go.mod without checking it out, so that main.py can
+        skip the protocols v2 does not run before the checkout.
+        """
+        if self._driver_type != "scylla":
+            return False
+        try:
+            go_mod = subprocess.run(["git", "show", f"{self._ref}:go.mod"], cwd=self._gocql_driver_git,
+                                    check=True, capture_output=True, text=True).stdout
+        except subprocess.CalledProcessError:
+            return False
+        module = next((line[len("module "):].strip() for line in go_mod.splitlines()
+                       if line.startswith("module ")), "")
+        return module.endswith("/v2")
+
+    def supports_protocol(self) -> bool:
+        """gocql v2's integration suite runs against Scylla on native protocol 4 only."""
+        return not self.is_scylla_v2 or self._protocol in V2_PROTOCOLS
+
     def _get_driver_module(self):
         """
         Extract the module name from the go.mod file in the gocql driver repository.
