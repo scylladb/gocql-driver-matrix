@@ -120,3 +120,9 @@ def test_integration_workflow_uploads_reports_after_failures():
     assert "xunit/" in reports["with"]["path"]
     assert "driver/ccm/**/logs/**" in reports["with"]["path"]
     assert "~/.ccm/*/node*/logs/**" in ccm_logs["with"]["path"]
+
+
+def test_docker_wrapper_can_run_a_downloaded_go_toolchain():
+    script = (REPO_ROOT / "scripts/run_test.sh").read_text(encoding="utf-8")
+
+    assert '--tmpfs "${HOME}/go:exec"' in script
