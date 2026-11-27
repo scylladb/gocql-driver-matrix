@@ -1,0 +1,43 @@
+# Last verified state on Apr 10, 2026 by Mikita Hradovich
+tests:
+  ignore:
+  skip:
+    - TestAggregateMetadata  # cassandra only
+    - TestFunctionMetadata  # cassandra only
+    - TestKeyspaceMetadata  # cassandra only
+    - TestGetTableMetadata  # cassandra only
+    - TestMaterializedViewMetadata  # cassandra only
+    - TestLexicalUUIDType  # cassandra only
+    - TestControlConn_ReconnectRefreshesRing  # skipped in scylladb/gocql
+    - TestDiscoverViaProxy  # https://github.com/scylladb/gocql/issues/146
+    - TestWriteFailure
+    - TestCustomPayloadValues
+    - TestCustomPayloadMessages
+    # CCM-tagged tests: skipped due to data race in the upstream test listener
+    # structs — unsynchronised slice append from multiple driver goroutines
+    # vs. concurrent reads from require.Eventually in the test goroutine.
+    # Additionally, Scylla processes can enter D-state in CI containers,
+    # surviving SIGKILL and causing ccm node stop/remove to time out.
+    - TestTopologyChangesListener
+    - TestHostStateChangesListener
+  flaky:
+  - TestWriteFailure
+v4_tests:
+  ignore:
+  skip:
+  - TestUDF  # cassandra only
+  - TestAggregateMetadata  # cassandra only
+  - TestFunctionMetadata  # cassandra only
+  - TestKeyspaceMetadata  # cassandra only
+  - TestMaterializedViewMetadata  # cassandra only
+  - TestLexicalUUIDType  # cassandra only
+  - TestControlConn_ReconnectRefreshesRing  # skipped in scylladb/gocql
+  - TestWriteFailure
+  - TestCustomPayloadValues
+  - TestCustomPayloadMessages
+  - TestDiscoverViaProxy  # https://github.com/scylladb/gocql/issues/146
+  # CCM-tagged tests: skipped due to data race — see tests.skip comments above.
+  - TestTopologyChangesListener
+  - TestHostStateChangesListener
+  flaky:
+  - TestWriteFailure
