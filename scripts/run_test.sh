@@ -89,7 +89,9 @@ docker_args=(
     --tmpfs "${HOME}/.cache"
     --tmpfs "${HOME}/.config"
     --tmpfs "${HOME}/.cassandra"
-    --tmpfs "${HOME}/go"
+    # exec: go downloads the toolchain a driver's go.mod asks for (gocql v2
+    # needs a newer Go than the image's) into the module cache and runs it.
+    --tmpfs "${HOME}/go:exec"
     --tmpfs "${HOME}/.local:exec,nosuid,size=2g"
     -v "${HOME}/.ccm:${HOME}/.ccm"
     --network=host --privileged

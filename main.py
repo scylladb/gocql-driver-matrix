@@ -18,8 +18,8 @@ def main(arguments: argparse.Namespace):
     results = dict()
     driver_type = get_driver_type(arguments.gocql_driver_git)
     for driver_version in arguments.versions:
+        protocols_run = 0
         for protocol in arguments.protocols:
-            logging.info('=== GOCQL DRIVER VERSION %s, PROTOCOL v%s ===', driver_version, protocol)
             runner = Run(gocql_driver_git=arguments.gocql_driver_git,
                              driver_type=driver_type,
                              tag=driver_version,
@@ -28,6 +28,12 @@ def main(arguments: argparse.Namespace):
                              scylla_version=arguments.scylla_version,
                              checkout_ref=arguments.checkout_ref,
                              )
+            if not runner.supports_protocol():
+                logging.info('=== GOCQL DRIVER VERSION %s does not run protocol v%s, skipping ===',
+                             driver_version, protocol)
+                continue
+            protocols_run += 1
+            logging.info('=== GOCQL DRIVER VERSION %s, PROTOCOL v%s ===', driver_version, protocol)
             try:
                 result = runner.run()
 
@@ -48,6 +54,10 @@ def main(arguments: argparse.Namespace):
                 failure_reason = traceback.format_exception(exc_type, exc_value, exc_traceback)
                 results[(driver_version, protocol)] = dict(exception=failure_reason)
                 runner.create_metadata_for_failure(reason="\n".join(failure_reason))
+        if not protocols_run:
+            logging.error("GOCQL DRIVER VERSION %s runs none of the protocols %s",
+                          driver_version, ",".join(arguments.protocols))
+            status = 1
 
     if arguments.recipients:
         email_report = create_report(results=results, scylla_version=arguments.scylla_version)
